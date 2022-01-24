@@ -1,72 +1,133 @@
-samplefile <- "../../Reports/CDK5RAP3/CDK5RAP3_subset_foetal_muscle.tsv"
+############################################################################# #
 
-##### Run Cortar #####
+#░▄▀▀░▄▀▄▒█▀▄░▀█▀▒▄▀▄▒█▀▄ v0.1.0                                      Nov 2021
+#░▀▄▄░▀▄▀░█▀▄░▒█▒░█▀█░█▀▄                        e: rmar4592@uni.sydney.edu.au
+
+
+## Clinically-focused relative quantification of aberrant pre-mRNA splicing.
+
+## TO DO:
+
+  #== Errors ==================================================================
+        # Fetching ensembl object does not load/wait for the code
+            # Use a biomart download?
+
+  #== Features ================================================================
+        # Don’t compare SJs of two samples testing the same gene
+        # Call proximal variants from RNAseq to measure allele bias
+        # Compare VCFs with RNAseq BAMs for AGRF cases
+        # How can we distinguish between IR and intronic cryptics
+            # Split reads! - don’t we already do this?
+
+  #== Optimisation ============================================================
+        # Optimise splice junction analysis for multiple samples with same gene
+        # Optimise a gene panel(s) to be run on the tool
+
+  #== Reporting ===============================================================
+        # Create code to automate creation of the summary excel sheet
+        # Enable reports for multiple genes to be analysed for a single sample
+        # Combine all of the excel sheets into a single file with summary
+        # Clean up code – especially spreadsheet processing
+
+  #== Other ===================================================================
+        # Re-run all old cases including Broad on newer versions of the tool
+        # Slideshow for podcast
+        # Time running the code for short and long genes
+        # Release as an R package on GitHub (paper?)
+
+
+###############################################################################
+
+
+#--Run Cortar------------------------------------------------------------------
+
+# Load samples for analysis (will be depreciated)
+sample_file.tsv <-
+    "../../Reports/New Feature Development/NFD_Dataset_Broad_26062013.tsv"
 
 # Runs the full pipeline
-cortar <- function(sampledata, exportlocation, sampleID="",genes="",alt_genes="",assembly="",variants="",VCF="", controls=F, chx = ""){
-    loadEnvironment()
-    samplelist <<- loadSamples(sampledata,sampleID,genes,alt_genes,assembly,variants,VCF)
-    samplelist <<- loadControls(samplelist,controls,chx)
-    validateSamples(samplelist)
-    setAssembly(samplelist)
-    samplelist <<- validateGenes(samplelist)
-    genes_grange <<- extractGeneRanges(samplelist)
-    sjs <<- obtainSJs(samplelist)
-    combined <<- combineSJs(samplelist,sjs)
-    combined <<- annotateExons(samplelist,combined)
-    combined <<- extractSJs(combined,sjs)
-    combined_dts <<- calculateSJs(combined,sjs)
-    combined_introns <<- extractIRs(samplelist, combined, combined_dts)
-    combined_introns <<- calculateIRs(combined_dts,combined_introns,sjs)
-    combined_introns_exons <<- combineIRSJ(combined_introns, combined_dts, samplelist, sjs)
-    compareSamples(samplelist, combined_introns_exons, exportlocation)
+cortar <- function(sampledata,exportlocation,sampleID="",genes="",alt_genes="",
+                   assembly="",variants="",VCF="", controls=F, chx = ""){
+    load.environment()
+    sampleList.dt <<- load.samples(sample_file.tsv,sampleID,genes,alt_genes,
+                                   assembly,variants,VCF)
+    sampleList.dt <<- load.controls(sampleList.dt,controls,chx)
+    validate.samples(sampleList.dt)
+    set.assembly(sampleList.dt)
+    sampleList.dt <<- validate.genes(sampleList.dt)
+    genes.GRanges <<- extract.gene.ranges(sampleList.dt)
+    sjs.GRanges <<- obtain.SJs(sampleList.dt)
+    combined.dt <<- combine.SJs(sampleList.dt,sjs.GRanges)
+    combined.dt <<- annotate.exons(sampleList.dt,combined.dt)
+    combined.dt <<- extract.SJs(combined.dt,sjs.GRanges)
+    combined.dt <<- calculate.SJs(combined.dt,sjs.GRanges)
+    combinedIntrons.dt <<- extract.IR(sampleList.dt, combined.dt)
+    combinedIntrons.dt <<- calculate.IR(combined.dt,combinedIntrons.dt,
+                                        sjs.GRanges)
+    combinedIntronsExons.dt <<- combine.IR.SJ(combinedIntrons.dt,combined.dt,
+                                              sampleList.dt,sjs.GRanges)
+    compare.samples(sampleList.dt, combinedIntronsExons.dt, exportlocation)
 }
 
 
-##### Load Environment #####
+#--Load Environment------------------------------------------------------------
 
 # Loads the required packages and variables required for validating input
-loadEnvironment <- function(){
+load.environment <- function(){
     message("Loading environment...")
     required_packages <- c("data.table","biomaRt","GenomicFeatures",
-                           "GenomicAlignments","GenomicRanges","BSgenome.Hsapiens.UCSC.hg38",
-                           "BSgenome.Hsapiens.1000genomes.hs37d5","Rsubread","openxlsx",
+                           "GenomicAlignments","GenomicRanges",
+                           "BSgenome.Hsapiens.UCSC.hg38",
+                           "BSgenome.Hsapiens.1000genomes.hs37d5",
+                           "Rsubread","openxlsx",
                            "BSgenome.Hsapiens.UCSC.hg19")
 
-    sapply(required_packages, require, warn.conflicts=F, quietly=T, character.only = TRUE)
-    sampleFileColumns <<- c("assembly","RNAseq","tissue","sampleID","family","sampletype","genes","alt_genes","bamfile","variants","VCF")
-    infocols <<- c("seqnames","start","end","width","strand","annotated","genes","event","introns")
+    sapply(required_packages,require,warn.conflicts=F,quietly=T,
+           character.only = TRUE)
+    sampleFileColumns <<- c("assembly","RNAseq","tissue","sampleID","family",
+                            "sampletype","genes","alt_genes","bamfile",
+                            "variants","VCF")
+    infocols <<- c("seqnames","start","end","width","strand","annotated",
+                   "genes","event","introns")
     message("\t","Environment loaded.","\n")
 }
 
-##### Load samples #####
+#--Load samples----------------------------------------------------------------
 
 # Loads the .tsv file containing multiple RNAseq files to be analysed
-loadSamples <- function(samples, sampleID="",genes="",alt_genes="",assembly="",variants="",VCF=""){
+load.samples <- function(samples, sampleID="",genes="",alt_genes="",
+                         assembly="",variants="",VCF=""){
     message("Loading samples...")
     if(grepl("\\.tsv$", samples)){
-        samplelist <- fread(samples, sep ="\t", fill=T)
+        sampleList.dt <- fread(samples, sep ="\t", fill=T)
         message("\t","Fetching ", samples)
     }else{
-        samplelist <- data.table(assembly,sampleID,1,"test",genes,alt_genes,samples,variants,VCF)
-        names(samplelist) <- sampleFileColumns
+        sampleList.dt <- data.table(assembly,sampleID,1,"test",genes,alt_genes,
+                                    samples,variants,VCF)
+        names(sampleList.dt) <- sampleFileColumns
     }
     message("\t","\t","Samples loaded.","\n")
-    return(samplelist)
+    return(sampleList.dt)
 }
 
-##### Generate control dataset #####
+#--Generate control dataset----------------------------------------------------
 
-# Adds optional additional controls to the analysis based on chosen parameters (age, sex, tissue)
-loadControls <- function(samples,controls,chx=""){
+# Adds additional controls based on chosen parameters (age, sex, tissue)
+load.controls <- function(samples,controls,chx=""){
     message("Loading controls...")
 
     if(controls == T){
         controlRNAseq <- fread("RNAseq_sample_database.tsv", sep ="\t", fill=T)
-        controlRNAseq <- controlRNAseq[which(tissue %in% unique(samples$tissue) & gene %nin% unique(samples$genes) & chx_dmso %in% c("",chx) & sampleID %nin% unique(samples$sampleID))]
-        controlRNAseq <- controlRNAseq[,c("assembly","RNAseq","tissue","sampleID",
-                                          "familyID","sampletype","gene","alt_genes","bamfile_batch_subset",
-                                          "variants","VCF_affected_gene"),with=F]
+        controlRNAseq <- controlRNAseq[which(
+                                    tissue %in% unique(samples$tissue) &
+                                    gene %nin% unique(samples$genes) &
+                                    chx_dmso %in% c("",chx) &
+                                    sampleID %nin% unique(samples$sampleID))]
+        controlRNAseq <- controlRNAseq[,c("assembly","RNAseq","tissue",
+                                          "sampleID","familyID","sampletype",
+                                          "gene","alt_genes",
+                                          "bamfile_batch_subset","variants",
+                                          "VCF_affected_gene"),with=F]
         samplecontrolRNAseq <- rbind(samples,controlRNAseq, use.names=F)
         message("\t","Additional controls included.","\n")
     }else{
@@ -76,25 +137,31 @@ loadControls <- function(samples,controls,chx=""){
     return(samplecontrolRNAseq)
 }
 
-##### Load Assembly Specific Parameters #####
+#--Load Assembly Specific Parameters-------------------------------------------
 
 # Pre-loads variables to either hg38 or hg19 depending on desired assembly
-setAssembly <- function(samples){
+set.assembly <- function(samples){
 
     message("Setting assembly parameters...")
 
     if(identical(unique(samples$assembly),"hg38")){
 
-        refseq_introns_exons <<- fread("refseq_introns_exons_hg38.tsv.gz", sep = "\t")
-        ensembl_gene_list <<- fread("hg38_mart_export_allgenes_chr1-Y.txt", sep = "\t")
-        #ensembl <<- useEnsembl(biomart = "genes", host = "www.ensembl.org", version = "104", dataset = "hsapiens_gene_ensembl")
+        refseq_introns_exons <<- fread("refseq_introns_exons_hg38.tsv.gz",
+                                       sep = "\t")
+        ensembl_gene_list <<- fread("hg38_mart_export_allgenes_chr1-Y.txt",
+                                    sep = "\t")
+        #ensembl <<- useEnsembl(biomart = "genes", host = "www.ensembl.org",
+        #                       version = "104",
+        #                       dataset = "hsapiens_gene_ensembl")
         message("\t","Parameters set for hg38 assembly.","\n")
 
     }else if (identical(unique(samples$assembly),"hg19")){
 
         refseq_introns_exons <<- fread("refseq_introns_exons_hg37.tsv.gz")
-        ensembl_gene_list <<- fread("hg19_mart_export_allgenes_chr1-Y.txt", sep = "\t")
-        #ensembl <<- useEnsembl(biomart = "genes", host = "grch37.ensembl.org", dataset = "hsapiens_gene_ensembl")
+        ensembl_gene_list <<- fread("hg19_mart_export_allgenes_chr1-Y.txt",
+                                    sep = "\t")
+        #ensembl <<- useEnsembl(biomart = "genes", host = "grch37.ensembl.org",
+        #                       dataset = "hsapiens_gene_ensembl")
         message("\t","Parameters set for hg19 assembly.","\n")
 
     }else{
@@ -104,61 +171,73 @@ setAssembly <- function(samples){
 }
 
 
-##### Validate Files and Genes #####
+#--Validate Files and Genes----------------------------------------------------
 
 #Checks the format of the multiple sample input file is correct
-validateSamples <- function(samples){
+validate.samples <- function(samples){
     message("Validating sample file...")
     if(identical(names(samples),sampleFileColumns) == T){
         message("\t","Sample file format valid.","\n")
         rm(sampleFileColumns, pos = 1)
     }else{
-        stop('Invalid file format. Ensure column headers are correct and file is tab-delimited')
+        stop('Invalid file format. Ensure column headers are correct and file
+             is tab-delimited')
     }
 }
 
-#Checks that all genes are present in RefSeq and Ensembl and finds matches in alt_genes if necessary
-validateGenes <- function(samples){
+#Checks that genes are in RefSeq and Ensembl and finds matches in alt_genes
+validate.genes <- function(samples){
     message("Checking gene names...")
 
-    samplelist$refseq_genes <- samplelist$genes
-    samplelist$ensembl_genes <- samplelist$genes
-    if (length(samplelist$genes[which(samplelist$genes %nin% refseq_introns_exons$gene_name)])==0 &
-        length(samplelist$genes[which(samplelist$genes %nin% ensembl_gene_list$`Gene name`)])==0){
-        message("\t","All gene names recognised by RefSeq & Ensembl databases.","\n")
-        return(samplelist)
+    sampleList.dt$refseq_genes <- sampleList.dt$genes
+    sampleList.dt$ensembl_genes <- sampleList.dt$genes
+    if (length(sampleList.dt$genes[which(sampleList.dt$genes %nin%
+                                         refseq_introns_exons$gene_name)])==0 &
+        length(sampleList.dt$genes[which(sampleList.dt$genes %nin%
+                                         ensembl_gene_list$`Gene name`)])==0){
+        message("\t",
+                "All gene names recognised by RefSeq & Ensembl databases.",
+                "\n")
+        return(sampleList.dt)
     }else{
-        message("\t","Genes not in RefSeq and/or Ensembl: ",length(samplelist$genes[which(samplelist$genes %nin% refseq_introns_exons$gene_name)]))
+        message("\t","Genes not in RefSeq and/or Ensembl: ",length(
+            sampleList.dt$genes[which(sampleList.dt$genes %nin%
+                                          refseq_introns_exons$gene_name)]))
     }
 
     message("\t","Querying alt_genes against RefSeq database...")
 
-    for(i in samplelist$genes[which(samplelist$genes %nin% refseq_introns_exons$gene_name)]){
-        alt_genes <- unlist(strsplit(samplelist$alt_genes[which(samplelist$genes == i)],split=","))
+    for(i in sampleList.dt$genes[which(sampleList.dt$genes %nin%
+                                       refseq_introns_exons$gene_name)]){
+        alt_genes <- unlist(strsplit(sampleList.dt$alt_genes[which(
+            sampleList.dt$genes == i)],split=","))
         if(length(alt_genes) == 0){
-            stop("Gene ","\"",i,"\""," not in RefSeq database. Try providing \"alt_genes\" or changing the gene name.")
+            stop("Gene ","\"",i,"\""," not in RefSeq database.",
+                 "Try providing \"alt_genes\" or changing the gene name.")
             break
         }
         for(j in seq(1,length(alt_genes))){
             if(alt_genes[j] %in% refseq_introns_exons$gene_name){
-                samplelist$refseq_genes[which(samplelist$genes== i)] <- alt_genes[j]
+                sampleList.dt$refseq_genes[which(
+                                    sampleList.dt$genes== i)] <- alt_genes[j]
                 break
             }else if(j == length(alt_genes)){
-                stop("Gene ","\"",i,"\""," and alt_genes not in RefSeq database.")
+                stop("Gene ","\"",i,"\"",
+                     " and alt_genes not in RefSeq database.")
             }
         }
     }
-    if(identical(samplelist$genes,samplelist$refseq_genes)){
+    if(identical(sampleList.dt$genes,sampleList.dt$refseq_genes)){
         message("\t","\t","All gene names recognised by RefSeq database.","\n")
 
     }else{
-        message("\t","\t","RefSeq gene names found: ",sum(samplelist$genes != samplelist$refseq_genes),"\n")
+        message("\t","\t","RefSeq gene names found: ",sum(sampleList.dt$genes != sampleList.dt$refseq_genes),"\n")
     }
 
     message("\t","Querying alt_genes against Ensembl database...")
 
-    for(i in samplelist$genes[which(samplelist$genes %nin% ensembl_gene_list$`Gene name`)]){
-        alt_genes <- unlist(strsplit(samplelist$alt_genes[which(samplelist$genes == i)],split=","))
+    for(i in sampleList.dt$genes[which(sampleList.dt$genes %nin% ensembl_gene_list$`Gene name`)]){
+        alt_genes <- unlist(strsplit(sampleList.dt$alt_genes[which(sampleList.dt$genes == i)],split=","))
 
         if(length(alt_genes) == 0){
             stop("Gene ","\"",i,"\""," not in Ensembl database. Try providing \"alt_genes\" or changing the gene name.")
@@ -167,7 +246,7 @@ validateGenes <- function(samples){
         for(j in seq(1,length(alt_genes))){
 
             if(alt_genes[j] %in% ensembl_gene_list$`Gene name`){
-                samplelist$ensembl_genes[which(samplelist$genes== i)] <- alt_genes[j]
+                sampleList.dt$ensembl_genes[which(sampleList.dt$genes== i)] <- alt_genes[j]
                 break
 
             }else if(j == length(alt_genes)){
@@ -176,22 +255,22 @@ validateGenes <- function(samples){
         }
     }
 
-    if(identical(samplelist$genes,samplelist$ensembl_genes)){
+    if(identical(sampleList.dt$genes,sampleList.dt$ensembl_genes)){
         message("\t","\t","All gene names recognised by Ensembl database.","\n")
 
     }else{
-        message("\t","\t","Ensembl gene names found: ",sum(samplelist$genes != samplelist$ensembl_genes),"\n")
+        message("\t","\t","Ensembl gene names found: ",sum(sampleList.dt$genes != sampleList.dt$ensembl_genes),"\n")
     }
 
-    samplelist$genes <- samplelist$ensembl_genes
-    return(samplelist)
+    sampleList.dt$genes <- sampleList.dt$ensembl_genes
+    return(sampleList.dt)
 }
 
 
-##### Extract Gene Names ######
+#--Extract Gene Names----------------------------------------------------------
 
 #Creates a granges object with the coordinates of the genes of interest
-extractGeneRanges <- function(samples){
+extract.gene.ranges <- function(samples){
     message("Extracting gene ranges...")
     genes <- getBM(attributes = c('external_gene_name','chromosome_name','start_position','end_position','strand'),
              filters = c('chromosome_name','external_gene_name'),
@@ -199,12 +278,12 @@ extractGeneRanges <- function(samples){
              mart = ensembl,
              uniqueRows = T)
 
-    genes_grange <- GRanges(seqnames = genes$chromosome_name, IRanges(start = genes$start_position, end = genes$end_position), strand = genes$strand)
-    #seqlevelsStyle(genes_grange) <- 'UCSC'
+    genes.GRanges <- GRanges(seqnames = genes$chromosome_name, IRanges(start = genes$start_position, end = genes$end_position), strand = genes$strand)
+    #seqlevelsStyle(genes.GRanges) <- 'UCSC'
 
-    #if(unique(samples$assembly) == "hg38"){
-        seqlevelsStyle(genes_grange) <- 'UCSC'
-    #}
+    if(unique(samples$assembly) == "hg38"){
+        seqlevelsStyle(genes.GRanges) <- 'UCSC'
+    }
 
     if(nrow(genes) != length(unlist(sapply(unique(samples$genes), strsplit, split = ",")))){
         warning("Gene ranges extracted for only ",nrow(genes)," of ",length(unlist(sapply(unique(samples$genes), strsplit, split = ",")))," genes.","\n")
@@ -212,18 +291,18 @@ extractGeneRanges <- function(samples){
     }else{
         message("\t","All gene ranges extracted successfully.","\n")
     }
-    return(genes_grange)
+    return(genes.GRanges)
 }
 
 
-##### Obtain Splice Junctions #####
+#--Obtain Splice Junctions-----------------------------------------------------
 
 # Obtain splice junctions for all samples for selected genes
-obtainSJs <- function(samples){
+obtain.SJs <- function(samples){
     message("Obtaining splice junctions...")
     sj = list()
 
-    param <- ScanBamParam(which = genes_grange,
+    param <- ScanBamParam(which = genes.GRanges,
                       flag=scanBamFlag(isDuplicate = FALSE,
                                        isSecondaryAlignment = F,
                                        isPaired = T))
@@ -242,8 +321,8 @@ obtainSJs <- function(samples){
 
         #hg19
         }else if (unique(samples$assembly) == "hg19"){
-            #sj[[sampleID]] <- summarizeJunctions(gal, genome = BSgenome.Hsapiens.1000genomes.hs37d5)
-            sj[[sampleID]] <- summarizeJunctions(gal, genome = BSgenome.Hsapiens.UCSC.hg19)
+            sj[[sampleID]] <- summarizeJunctions(gal, genome = BSgenome.Hsapiens.1000genomes.hs37d5)
+            #sj[[sampleID]] <- summarizeJunctions(gal, genome = BSgenome.Hsapiens.UCSC.hg19)
         }
         strand(sj[[sampleID]]) <- mcols(sj[[sampleID]])[,"intron_strand"]
     }
@@ -252,36 +331,36 @@ obtainSJs <- function(samples){
 }
 
 
-##### Combine Splice Junctions #####
+#--Combine Splice Junctions----------------------------------------------------
 
-# Obtain all reads for combined splice junctions
-combineSJs <- function(samples,sj){
+# Obtain all reads for combined.dt splice junctions
+combine.SJs <- function(samples,sj){
     message("Combining splice junctions...")
 
     combined_grlist <- GRangesList(unlist(sj))
-    combined <- unique(unlist(combined_grlist))
+    combined.dt <- unique(unlist(combined_grlist))
 
-    mcols(combined)[c('score','plus_score','minus_score','intron_motif','intron_strand')] <- NULL
+    mcols(combined.dt)[c('score','plus_score','minus_score','intron_motif','intron_strand')] <- NULL
 
 
 
     for (row_number in 1:nrow(samples)) {
         sampleID <- samples[row_number, sampleID]
         message("\t",sampleID)
-        mcols(combined)[paste0("sj_", sampleID)] <- NA
+        mcols(combined.dt)[paste0("sj_", sampleID)] <- NA
 
-        qryhits <- findOverlaps(sj[[sampleID]], combined, type = "equal")
-        mcols(combined[subjectHits(qryhits)])[paste0("sj_", sampleID)] <- mcols(sj[[sampleID]][queryHits(qryhits)])[,'score']
+        qryhits <- findOverlaps(sj[[sampleID]], combined.dt, type = "equal")
+        mcols(combined.dt[subjectHits(qryhits)])[paste0("sj_", sampleID)] <- mcols(sj[[sampleID]][queryHits(qryhits)])[,'score']
 
-        mcols(combined)[paste0("sj_", sampleID)] <- nafill(mcols(combined)[, paste0("sj_", sampleID)], type = "const", fill = 0)
+        mcols(combined.dt)[paste0("sj_", sampleID)] <- nafill(mcols(combined.dt)[, paste0("sj_", sampleID)], type = "const", fill = 0)
     }
-    message("\t","\t","Splice junctions combined.","\n")
-    return(combined)
+    message("\t","\t","Splice junctions combined.dt.","\n")
+    return(combined.dt)
 }
 
 
-##### Annotate Exons #####
-annotateExons <- function(samples,combinedsamples){
+#--Annotate Exons--------------------------------------------------------------
+annotate.exons <- function(samples,combinedsamples){
     message("Annotating exons...")
     refseq_introns_exons_of_interest <<- refseq_introns_exons[canonical == 1 & gene_name %in% unique(samples$refseq_genes) & region_type == 'intron']
 
@@ -314,18 +393,18 @@ annotateExons <- function(samples,combinedsamples){
 }
 
 
-##### Extract Splice Junctions from Samples #####
-extractSJs <- function(combinedsamples,sj){
+#--Extract Splice Junctions from Samples---------------------------------------
+extract.SJs <- function(combinedsamples,sj){
 
     message("Extracting annotated splice junctions...")
-    combined <- sortSeqlevels(combinedsamples)
-    combined <- sort(combinedsamples)
+    combined.dt <- sortSeqlevels(combinedsamples)
+    combined.dt <- sort(combinedsamples)
 
     for (sample_name in names(sj)){
         message("\t",sample_name)
 
-        lhs <<- as.data.table(combined[,paste0("sj_", sample_name)])
-        rhs <<- as.data.table(combined[,paste0("sj_", sample_name)])
+        lhs <<- as.data.table(combined.dt[,paste0("sj_", sample_name)])
+        rhs <<- as.data.table(combined.dt[,paste0("sj_", sample_name)])
 
         lhs_rhs_merged <<- merge(lhs, rhs, by="seqnames", allow.cartesian = T, suffixes = c("","_overlap"))
 
@@ -348,15 +427,15 @@ extractSJs <- function(combinedsamples,sj){
         sj_overlap_gr <- sortSeqlevels(sj_overlap_gr)
         sj_overlap_gr <- sort(sj_overlap_gr)
 
-        mcols(combined)[sj_overlap_column_name] <- mcols(sj_overlap_gr)[,sj_overlap_column_name]
+        mcols(combined.dt)[sj_overlap_column_name] <- mcols(sj_overlap_gr)[,sj_overlap_column_name]
     }
     message("\t","\t","Annotated splice junctions extracted.","\n")
-    return(combined)
+    return(combined.dt)
 }
 
 
-##### Calculate usage of splice junctions #####
-calculateSJs <- function(combinedsamples, sj){
+#--Calculate usage of splice junctions-----------------------------------------
+calculate.SJs <- function(combinedsamples, sj){
     message("Calculating splice junction usage...")
     for (sample_name in names(sj)) {
         message("\t",sample_name)
@@ -364,36 +443,35 @@ calculateSJs <- function(combinedsamples, sj){
         mcols(combinedsamples)[paste0("sj_pct_", sample_name)] <- nafill(mcols(combinedsamples)[,paste0("sj_pct_", sample_name)], type = "const", fill = 0)
     }
 
-    combined_dt <- as.data.table(combinedsamples)
+    combineddt <- as.data.table(combinedsamples)
 
-    combined_dt[, event := mapply(gen_exon_range, strand, exon_range_start, exon_range_end)]
-    combined_dt[, introns := mapply(gen_introns, exon_range_start, exon_range_end)]
-    combined_dt[, genes := mapply(gen_fetch, exon_range_start, exon_range_end)]
-    combined_dt[, `:=`(exon_range_start = NULL, exon_range_end = NULL)]
+    combineddt[, event := mapply(gen.exon.range, strand, exon_range_start, exon_range_end)]
+    combineddt[, introns := mapply(gen.introns, exon_range_start, exon_range_end)]
+    combineddt[, genes := mapply(gen.fetch, exon_range_start, exon_range_end)]
+    combineddt[, `:=`(exon_range_start = NULL, exon_range_end = NULL)]
 
     infocols <- c("seqnames","start","end","width","strand","annotated","genes","event","introns")
 
     message("\t","\t","Splice junction usage calculated.","\n")
-    return(combined_dt)
+    return(combineddt)
 }
 
 
-##### Extract Intron Retention from Samples
-extractIRs <- function(samples, combinedsamples, combined_dt){
-    #### Get splice junction (LHS) non-split reads ####
+#--Extract Intron Retention from Samples---------------------------------------
+extract.IR <- function(samples, combineddt){
 
     rightparams <- c(end,-2,-1,"RHS")
     leftparams <- c(start,+1,+2,"LHS")
     IRparams <- list(leftparams,rightparams)
     message("Extracting intron retention reads...")
     for(i in seq(1,2)){
-        sj_start_pos <- GRanges(seqnames = seqnames(combined),
-                            ranges = IRanges(start = IRparams[[i]][[1]](combined) + IRparams[[i]][[2]],
-                                             end = IRparams[[i]][[1]](combined) + IRparams[[i]][[3]]),
-                            strand = strand(combined))
+        sj_start_pos <- GRanges(seqnames = seqnames(combineddt),
+                            ranges = IRanges(start = IRparams[[i]][[1]](combineddt) + IRparams[[i]][[2]],
+                                             end = IRparams[[i]][[1]](combineddt) + IRparams[[i]][[3]]),
+                            strand = strand(combineddt))
 
         rsubreadCounts <- featureCounts(files = samples$bamfile,
-                                    annot.ext=GRanges2SAF(sj_start_pos, 5),
+                                    annot.ext=GRanges.to.SAF(sj_start_pos, 5),
                                     minOverlap=5*2,
                                     allowMultiOverlap=TRUE,
                                     checkFragLength=FALSE,
@@ -416,22 +494,22 @@ extractIRs <- function(samples, combinedsamples, combined_dt){
                                     tmpDir="temp")
 
         if(i == 1){
-            combined_intron <- cbind(combined_dt[,infocols, with = F], rsubreadCounts$counts)
-            setnames(combined_intron, basename(samples$bamfile), paste0("left_", samples$sampleID))
+            combinedintron <- cbind(combineddt[,infocols, with = F], rsubreadCounts$counts)
+            setnames(combinedintron, basename(samples$bamfile), paste0("left_", samples$sampleID))
 
         }else if(i == 2){
-            combined_intron <- cbind(combined_intron, rsubreadCounts$counts)
-            setnames(combined_intron, basename(samples$bamfile), paste0("right_", samples$sampleID))
+            combinedintron <- cbind(combinedintron, rsubreadCounts$counts)
+            setnames(combinedintron, basename(samples$bamfile), paste0("right_", samples$sampleID))
         }
         message("\t","Extracted ",IRparams[[i]][[4]]," IR reads.")
     }
     message("\t","\t","Intron Retention reads extracted.","\n")
-    return(combined_intron)
+    return(combinedintron)
 }
 
 
-##### Calculate intron retention #####
-calculateIRs <- function(combined_dt,combined_intron,sj){
+#--Calculate intron retention--------------------------------------------------
+calculate.IR <- function(combined.dt,combinedintron,sj){
     message("Calculating intron retention...")
     for (sample_name in names(sj)) {
         ir_column <- paste0("ir_", sample_name)
@@ -439,28 +517,28 @@ calculateIRs <- function(combined_dt,combined_intron,sj){
         ns_left_column <- paste0("left_", sample_name)
         ns_right_column <- paste0("right_", sample_name)
 
-        combined_intron[, c(ir_column) := nafill(( (get(ns_left_column)/(get(ns_left_column) + combined_dt[[sj_column]])) +
-                                                   (get(ns_right_column)/(get(ns_right_column) + combined_dt[[sj_column]])) ) / 2, "const", 0)]
+        combinedintron[, c(ir_column) := nafill(( (get(ns_left_column)/(get(ns_left_column) + combineddt[[sj_column]])) +
+                                                   (get(ns_right_column)/(get(ns_right_column) + combineddt[[sj_column]])) ) / 2, "const", 0)]
     }
     message("\t","Intron Retention calculated.","\n")
-    return(combined_intron)
+    return(combinedintron)
 }
 
 
-#### Combining IR and SJ Data ####
-combineIRSJ <- function(combined_intron, combined_dt, samples, sj){
+#--Combining IR and SJ Data----------------------------------------------------
+combine.IR.SJ <- function(combinedintron, combineddt, samples, sj){
     message("Combining intron retention and splice junction data...")
     #Labelling IR and SJ prior to combining
-    combined_intron$SJ_IR <- "IR"
-    combined_intron$frame_conserved <- framed(combined_intron$SJ_IR,combined_intron$start,combined_intron$end)
-    combined_dt$SJ_IR <- "SJ"
-    combined_dt$frame_conserved <- framed(combined_dt$SJ_IR,combined_dt$start,combined_dt$end)
+    combinedintron$SJ_IR <- "IR"
+    combinedintron$frame_conserved <- framed(combinedintron$SJ_IR,combinedintron$start,combinedintron$end)
+    combineddt$SJ_IR <- "SJ"
+    combineddt$frame_conserved <- framed(combineddt$SJ_IR,combineddt$start,combineddt$end)
 
     #Combining intron/exon data in one data frame and combining read location in a second
-    combined_intron_final <- combined_intron[,c(paste0("ir_", names(sj)),paste0("left_", names(sj))), with=F]
-    combined_intron_info <- combined_intron[,c(infocols,"SJ_IR","frame_conserved"), with = F]
-    combined_dt_final <- combined_dt[,c(paste0("sj_pct_", names(sj)),paste0("sj_", names(sj))), with=F]
-    combined_dt_info <- combined_dt[,c(infocols,"SJ_IR","frame_conserved"), with = F]
+    combined_intron_final <- combinedintron[,c(paste0("ir_", names(sj)),paste0("left_", names(sj))), with=F]
+    combined_intron_info <- combinedintron[,c(infocols,"SJ_IR","frame_conserved"), with = F]
+    combined_dt_final <- combineddt[,c(paste0("sj_pct_", names(sj)),paste0("sj_", names(sj))), with=F]
+    combined_dt_info <- combineddt[,c(infocols,"SJ_IR","frame_conserved"), with = F]
     combined_dt_intron_data <- as.data.table(mapply(c,combined_dt_final,combined_intron_final))
     combined_dt_intron_info <- rbind(combined_dt_info, combined_intron_info)
 
@@ -469,13 +547,13 @@ combineIRSJ <- function(combined_intron, combined_dt, samples, sj){
     combined_dt_intron$event[which(combined_dt_intron$introns != "" & combined_dt_intron$SJ_IR == "IR")] <- combined_dt_intron$introns[which(combined_dt_intron$introns != "" & combined_dt_intron$SJ_IR == "IR")]
     combined_dt_intron$assembly <- unique(samples$assembly)
 
-    message("\t","Data combined.","\n")
+    message("\t","Data combined.dt.","\n")
     return(combined_dt_intron)
 }
 
 
 #The code from here onwards needs to be incorporated into a for loop for each proband/family
-compareSamples <- function(samples, combined_dt_intron, exportlocation){
+compare.samples <- function(samples, combined_dt_intron, exportlocation){
     message("Comparing samples...")
     for(sample in seq(1,nrow(samples))){
         combined_dt_intron_test <- combined_dt_intron
@@ -535,10 +613,10 @@ compareSamples <- function(samples, combined_dt_intron, exportlocation){
             #for(i in seq(0,length(testgenes))){
                 #combined_dt_intron_final <- combined_dt_intron_final[which(combined_dt_intron_final$genes == testgenes[i])]
                 #combined_dt_intron_final <- combined_dt_intron_final[which(combined_dt_intron_final$two_sd == TRUE)]
-                generateReport(combined_dt_intron_final[which(combined_dt_intron_final$genes == testgenes)], length(familycols), testgenes, exportlocation, samples$sampleID[sample])
+                generate.report(combined_dt_intron_final[which(combined_dt_intron_final$genes == testgenes)], length(familycols), testgenes, exportlocation, samples$sampleID[sample])
             #}
         }else{
-            #Exporting the combined dataframe to an excel spreadsheet
+            #Exporting the combined.dt dataframe to an excel spreadsheet
             openxlsx::write.xlsx(combined_dt_intron_final, paste(exportlocation,samples$sampleID[sample],"_combined_dt_",samples$assembly[1],".xlsx", sep=""), asTable = T, overwrite = T)
         }
     }
@@ -547,8 +625,8 @@ compareSamples <- function(samples, combined_dt_intron, exportlocation){
 }
 
 
-##### Optional - add variants and allele bias #####
-addVCF <- function(samples){
+#--Optional - add variants and allele bias-------------------------------------
+add.VCF <- function(samples){
     for (row_number in 1:nrow(samples)) {
         sampleID <- samples[row_number, sampleID]
         vcffile <- samples[row_number, VCF]
@@ -567,8 +645,8 @@ addVCF <- function(samples){
 
 
 
-##### Other #####
-GRanges2SAF <- function(gr, minAnchor=1){
+#--Other-----------------------------------------------------------------------
+GRanges.to.SAF <- function(gr, minAnchor=1){
     data.table(
         GeneID  = seq_along(gr),
         Chr     = as.factor(seqnames(gr)),
@@ -579,7 +657,7 @@ GRanges2SAF <- function(gr, minAnchor=1){
 }
 
 #Splicing junctions
-gen_exon_range <- function(strand, exon_range_start, exon_range_end) {
+gen.exon.range <- function(strand, exon_range_start, exon_range_end) {
 
     exon_range_start <- as.numeric(strsplit(exon_range_start,split=" ")[[1]][3])
     exon_range_end <- as.numeric(strsplit(exon_range_end,split=" ")[[1]][3])
@@ -610,7 +688,7 @@ gen_exon_range <- function(strand, exon_range_start, exon_range_end) {
 }
 
 #Introns
-gen_introns <- function(exon_range_start, exon_range_end) {
+gen.introns <- function(exon_range_start, exon_range_end) {
 
     exon_range_start <- as.numeric(strsplit(exon_range_start,split=" ")[[1]][3])
     exon_range_end <- as.numeric(strsplit(exon_range_end,split=" ")[[1]][3])
@@ -625,7 +703,7 @@ gen_introns <- function(exon_range_start, exon_range_end) {
 }
 
 #Add gene names
-gen_fetch <- function(exon_range_start, exon_range_end) {
+gen.fetch <- function(exon_range_start, exon_range_end) {
 
     exon_range_start <- strsplit(exon_range_start,split=" ")[[1]][1]
     exon_range_end <- strsplit(exon_range_end,split=" ")[[1]][1]
@@ -688,7 +766,7 @@ framed <- function(event, x,y){
 }
 
 #Generate Report
-generateReport <- function(data, familymembers, gene, export, sample){
+generate.report <- function(data, familymembers, gene, export, sample){
 
     # Create an Excel workbook object and add a worksheet
     wb <- createWorkbook()
