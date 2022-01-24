@@ -1,4 +1,4 @@
-############################################################################# #
+# ########################################################################### #
 
 #░▄▀▀░▄▀▄▒█▀▄░▀█▀▒▄▀▄▒█▀▄ v0.1.0                                      Nov 2021
 #░▀▄▄░▀▄▀░█▀▄░▒█▒░█▀█░█▀▄                        e: rmar4592@uni.sydney.edu.au
@@ -13,13 +13,16 @@
             # Use a biomart download?
 
   #== Features ================================================================
-        # Call proximal variants from RNAseq to measure allele bias
-        # Compare VCFs with RNAseq BAMs for AGRF cases
         # How can we distinguish between IR and intronic cryptics
             # Split reads! - don’t we already do this?
             # For intronic cryptics, the number of non-split reads equal to
               # the number of split intronic cryptic reads should be subtracted
               # from the total number of IR (non-split) reads - does that work?
+              # for the left hand side the split read has to end in the intron
+              # for the right hand side, the split read has to end in the exon
+              # make the deductions before the average
+        # Call proximal variants from RNAseq to measure allele bias
+        # Compare VCFs with RNAseq BAMs for AGRF cases
 
   #== Optimisation ============================================================
         # Optimise splice junction analysis for multiple samples with same gene
@@ -38,7 +41,7 @@
         # Release as an R package on GitHub (paper?)
 
 
-###############################################################################
+# ########################################################################### #
 
 
 #--Run Cortar------------------------------------------------------------------
