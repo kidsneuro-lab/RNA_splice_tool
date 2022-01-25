@@ -21,6 +21,8 @@
               # for the left hand side the split read has to end in the intron
               # for the right hand side, the split read has to end in the exon
               # make the deductions before the average
+              # should use either the unique IR junction or the average of the
+                # unique junction and the closest cryptic to the junction
         # Call proximal variants from RNAseq to measure allele bias
         # Compare VCFs with RNAseq BAMs for AGRF cases
 
@@ -658,8 +660,41 @@ combine.IR.SJ <- function(combinedintron, combineddt, samples, sj){
     return(combined_dt_intron)
 }
 
+#--Calculate true IR-----------------------------------------------------------
+
+# get all IR counts for introns and intronic cryptics
+# annotate data.table with whether each intron has an intronic cryptic
+# use annotation to select counts which will be duplicated - for averaging.
+# continue workflow with adjusted IR counts.
+# what if there are intronic cryptics on both sides of the intron?
+
+cryptics.df <- combinedIntronsExons.dt[which(SJ_IR == "SJ" & event != "unannotated junctions" &
+                                annotated == "N")]
+
+for(i in seq(1,nrow(cryptics.df))){
+
+  if((cryptics.df$end[i] %in% intronsOfInterest.df$end & cryptics.df$start[i] %in% intronsOfInterest.df$start) == FALSE){
+    if(cryptics.df$end[i] %in% intronsOfInterest.df$end){
+      if(cryptics.df$start[i] > intronsOfInterest.df$start[which(intronsOfInterest.df$end == cryptics.df$end[i])]){
+        cat(c(i," start", "\n"))
+      }
+    }else if(cryptics.df$start[i] %in% intronsOfInterest.df$start){
+      if(cryptics.df$end[i] < intronsOfInterest.df$end[which(intronsOfInterest.df$start == cryptics.df$start[i])]){
+        cat(c(i," end", "\n"))
+      }
+    }
+  }
 
 
+
+}
+
+
+cryptics.df[1,2] < intronsOfInterest.df$start[which(intronsOfInterest.df$end == cryptics.df[1,3])]
+
+
+
+#--Compare splicing between test and controls----------------------------------
 compare.samples <- function(samples, combined_dt_intron, exportlocation){
     message("Comparing samples...")
     for(sample in seq(1,nrow(samples))){
