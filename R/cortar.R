@@ -23,6 +23,7 @@
               # make the deductions before the average
               # should use either the unique IR junction or the average of the
                 # unique junction and the closest cryptic to the junction
+        # Calculate IR and SJ as the proportion of all reads
         # Call proximal variants from RNAseq to measure allele bias
         # Compare VCFs with RNAseq BAMs for AGRF cases
 
@@ -102,12 +103,12 @@ load.environment <- function(){
 
     message("\t","Environment loaded.","\n")
 }
-
 #--Load samples----------------------------------------------------------------
 
 # Loads the .tsv file containing multiple RNAseq files to be analysed
 load.samples <- function(samples, sampleID="",genes="",alt_genes="",
                          assembly="",variants="",VCF=""){
+
 
     message("Loading samples...")
 
@@ -335,7 +336,7 @@ extract.gene.ranges <- function(samples){
 
 #--Obtain Splice Junctions-----------------------------------------------------
 
-# Obtain splice junctions for all samples for selected genes
+# All splice junctions need to be extracted before annotation.
 obtain.SJs <- function(samples){
     message("Obtaining splice junctions...")
     sj = list()
@@ -603,16 +604,28 @@ extract.IR <- function(samples, combinedsamples, combineddt){
 calculate.IR <- function(combineddt,combinedintron,sj){
     message("Calculating intron retention...")
     for (sample_name in names(sj)) {
+
+        message("\t",sample_name)
+
         ir_column <- paste0("ir_", sample_name)
         sj_column <- paste0("sj_", sample_name)
+        sj_pct_column <- paste0("sj_pct_", sample_name)
+        sj_overlap_column <- paste0("sj_", sample_name, "_overlap")
         ns_left_column <- paste0("left_", sample_name)
         ns_right_column <- paste0("right_", sample_name)
 
         combinedintron[, c(ir_column) :=
-                         nafill(( (get(ns_left_column)/(get(ns_left_column) +
-                                combineddt[[sj_column]])) +
+                         nafill((get(ns_left_column)/(get(ns_left_column) +
+                                 combineddt[[sj_overlap_column]])) +
                                 (get(ns_right_column)/(get(ns_right_column) +
-                                combineddt[[sj_column]])) ) / 2, "const", 0)]
+                                 combineddt[[sj_overlap_column]]))  / 2,
+                                "const", 0)]
+
+        combineddt[, c(sj_pct_column) :=
+                         nafill((get(sj_column)/(get(sj_overlap_column) +
+                                ((combinedintron[[ns_left_column]] +
+                                 combinedintron[[ns_right_column]])/2))),
+                                "const", 0)]
     }
     message("\t","Intron Retention calculated.","\n")
     return(combinedintron)
@@ -668,29 +681,29 @@ combine.IR.SJ <- function(combinedintron, combineddt, samples, sj){
 # continue workflow with adjusted IR counts.
 # what if there are intronic cryptics on both sides of the intron?
 
-cryptics.df <- combinedIntronsExons.dt[which(SJ_IR == "SJ" & event != "unannotated junctions" &
-                                annotated == "N")]
+#cryptics.df <- combinedIntronsExons.dt[which(SJ_IR == "SJ" & event != "unannotated junctions" &
+#                                annotated == "N")]
 
-for(i in seq(1,nrow(cryptics.df))){
+#for(i in seq(1,nrow(cryptics.df))){
 
-  if((cryptics.df$end[i] %in% intronsOfInterest.df$end & cryptics.df$start[i] %in% intronsOfInterest.df$start) == FALSE){
-    if(cryptics.df$end[i] %in% intronsOfInterest.df$end){
-      if(cryptics.df$start[i] > intronsOfInterest.df$start[which(intronsOfInterest.df$end == cryptics.df$end[i])]){
-        cat(c(i," start", "\n"))
-      }
-    }else if(cryptics.df$start[i] %in% intronsOfInterest.df$start){
-      if(cryptics.df$end[i] < intronsOfInterest.df$end[which(intronsOfInterest.df$start == cryptics.df$start[i])]){
-        cat(c(i," end", "\n"))
-      }
-    }
-  }
-
-
-
-}
+#  if((cryptics.df$end[i] %in% intronsOfInterest.df$end & cryptics.df$start[i] %in% intronsOfInterest.df$start) == FALSE){
+#    if(cryptics.df$end[i] %in% intronsOfInterest.df$end){
+#      if(cryptics.df$start[i] > intronsOfInterest.df$start[which(intronsOfInterest.df$end == cryptics.df$end[i])]){
+#        cat(c(i," start", "\n"))
+#      }
+#    }else if(cryptics.df$start[i] %in% intronsOfInterest.df$start){
+#      if(cryptics.df$end[i] < intronsOfInterest.df$end[which(intronsOfInterest.df$start == cryptics.df$start[i])]){
+#        cat(c(i," end", "\n"))
+#      }
+#    }
+#  }
 
 
-cryptics.df[1,2] < intronsOfInterest.df$start[which(intronsOfInterest.df$end == cryptics.df[1,3])]
+
+#}
+
+
+#cryptics.df[1,2] < intronsOfInterest.df$start[which(intronsOfInterest.df$end == cryptics.df[1,3])]
 
 
 
@@ -881,8 +894,8 @@ gen.introns <- function(exon_range_start, exon_range_end) {
     exon_range_end <- as.numeric(strsplit(exon_range_end,split=" ")[[1]][3])
     exon_ranges <- c(exon_range_start, exon_range_end)
 
-    if (!is.na(exon_range_start) & !is.na(exon_range_end)) {
-        return(paste("intron ",min(exon_ranges), sep="", collapse=""))
+    if (!is.na(exon_range_start) | !is.na(exon_range_end)) {
+        return(paste("intron ",min(exon_ranges,na.rm=T), sep="", collapse=""))
 
     }else{
         return("")
