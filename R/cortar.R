@@ -176,9 +176,9 @@ set.assembly <- function(samples){
                                        sep = "\t")
         ensembl_gene_list <<- fread("hg38_mart_export_allgenes_chr1-Y.txt",
                                     sep = "\t")
-        #ensembl <<- useEnsembl(biomart = "genes", host = "www.ensembl.org",
-        #                       version = "104",
-        #                       dataset = "hsapiens_gene_ensembl")
+        ensembl <<- useEnsembl(biomart = "genes", host = "www.ensembl.org",
+                               version = "104",
+                               dataset = "hsapiens_gene_ensembl")
         message("\t","Parameters set for hg38 assembly.","\n")
 
     }else if (identical(unique(samples$assembly),"hg19")){
@@ -309,9 +309,9 @@ extract.gene.ranges <- function(samples){
     genes <- getBM(attributes = c('external_gene_name','chromosome_name',
                                   'start_position','end_position','strand'),
              filters = c('chromosome_name','external_gene_name'),
-             values = list(c(as.character(seq(1,22)), "X", "Y"),
-                           unlist(sapply(unique(samples$genes),strsplit,
-                                         split = ","))),
+             values = list(c(as.character(seq(1,22)), "X", "Y"), c("CDK5RAP3","COL2A1")),
+                           #unlist(sapply(unique(samples$genes),strsplit,
+                           #              split = ","))),
              mart = ensembl,
              uniqueRows = T)
 

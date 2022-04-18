@@ -3,3 +3,4 @@ temp*
 *.tsv*
 *.txt
 .Rproj.user
+*.gff
