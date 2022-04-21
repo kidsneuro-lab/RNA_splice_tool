@@ -14,7 +14,7 @@ sig_introns <- gene_graph_data[,.(sum(two_sd)),by=introns][which(V1 != 0), intro
 #sig_introns <- gene_graph_data[,.(sum(two_sd)),by=introns][, introns]
 #sig_introns <- mthfr_values[,.(sum(two_sd)),by=introns][which(V1 != 0), introns]
 
-pctsample <- paste0("sj_pct_",sample)
+pctsample <- "probandpct"
 
 gene_graph_data <- gene_graph_data[,c("introns","event", "normal", "SJ_IR", "frame_conserved", pctsample, "controlavg", "difference","two_sd", "unique"), with = F]
 #mthfr_graph_data <- mthfr_values[,.(introns,event, normal, SJ_IR, frame_conserved, sj_pct_281_MTHFR_P, controlavg, difference,two_sd, unique)]
@@ -36,7 +36,7 @@ gene_graph_data[normal == "Y", colour := "lightblue"]
 gene_graph_data <- gene_graph_data[introns %in% sig_introns][order(as.numeric(orderintrons),normal,frame_conserved, decreasing = F)]
 #mthfr_graph_data <- mthfr_graph_data[introns %in% sig_introns][order(introns,normal,frame_conserved, decreasing = F)]
 
-pdf(paste0(exportlocation,"/",sample,"_",testgenes,"_pie_charts",".pdf"))
+#pdf(paste0(exportlocation,"/",sample,"_",testgenes,"_pie_charts",".pdf"))
 
 if(length(sig_introns) == 0){
     print("no significant changes")
@@ -53,7 +53,7 @@ for(i in unique(gene_graph_data$introns)){
     text(c(0, 0), c(1.0,1.0), labels = strsplit(i,split=" ")[[1]][2], col="black", cex = 1.5)
 }
 
-dev.off()
+#dev.off()
 }
 
 

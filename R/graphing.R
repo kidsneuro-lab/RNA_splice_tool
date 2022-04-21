@@ -1,4 +1,4 @@
-mthfr <- refseq_introns_exons[gene_name == "MTHFR"]
+mthfr <- Refseq_Genes[gene_name == "MTHFR"]
 
 mthfr <- mthfr[, figure_pos := ifelse(tx_id=="NM_001330358",0,1)]
 
@@ -9,7 +9,7 @@ coding_mthfr <- mthfr[region_type=="cds"]
 non_coding_mthfr <- mthfr[region_type %in% c("5utr","3utr")]
 labels_mthfr <- mthfr[region_type == "intron"]
 
-mthfr_values <- fread("../../Reports/New Feature Development/281_MTHFR_P_MTHFR_combined_full.tsv")
+mthfr_values <- fread("../../../Reports/New Feature Development/281_MTHFR_P_MTHFR_combined_full.tsv")
 
 mthfr_values <- mthfr_values[!which(mthfr_values$SJ_IR == "IR" & mthfr_values$annotated == "N")]
 mthfr_values <- mthfr_values[!which(mthfr_values$event == "unannotated junctions")]
@@ -34,16 +34,16 @@ View(mthfr_graph_data)
 par(mfcol = c(2, 7))
 par(mar = c(0, 0, 0, 0))
 
-for(i in unique(mthfr_graph_data$introns)){
-    mthfr_graph_data_working <- mthfr_graph_data[introns == i]
-
-    pie(mthfr_graph_data[introns == i, sj_pct_281_MTHFR_P], labels = "", col = mthfr_graph_data[introns == i, colour])#, mthfr_graph_data[introns == i, event])
-    text(c(0, 0), c(1.1,1.1), labels = i, col="black", cex = 1.5)
-    pie(mthfr_graph_data[introns == i, controlavg], labels = "", col = mthfr_graph_data[introns == i, colour])
-    text(c(0, 0), c(1.1,1.1), labels = i, col="black", cex = 1.5)
-    #pie(x, labels, radius, main, col, clockwise)
-    print(i)
-}
+# for(i in unique(mthfr_graph_data$introns)){
+#     mthfr_graph_data_working <- mthfr_graph_data[introns == i]
+#
+#     pie(mthfr_graph_data[introns == i, sj_pct_281_MTHFR_P], labels = "", col = mthfr_graph_data[introns == i, colour])#, mthfr_graph_data[introns == i, event])
+#     text(c(0, 0), c(1.1,1.1), labels = i, col="black", cex = 1.5)
+#     pie(mthfr_graph_data[introns == i, controlavg], labels = "", col = mthfr_graph_data[introns == i, colour])
+#     text(c(0, 0), c(1.1,1.1), labels = i, col="black", cex = 1.5)
+#     #pie(x, labels, radius, main, col, clockwise)
+#     print(i)
+# }
 
 
 #View(mthfr)
@@ -79,9 +79,9 @@ for(i in seq(1,nrow(labels_mthfr))){
     label_pos <- (start_label + end_label)/2
     pos <- (start + end)/2
     cat(label_pos,"\n")
-    text(c(label_pos, label_pos), c(0.60, 0.60), labels = labels_mthfr[canonical == 1, region_no][i], col="black")
-    segments(pos-0.002, 0.5-(gap*labels_mthfr$figure_pos[i]), pos+0.002, 0.51-(gap*labels_mthfr$figure_pos[i]), lwd=3)
-    segments(pos-0.002, 0.5-(gap*labels_mthfr$figure_pos[i]), pos+0.002, 0.49-(gap*labels_mthfr$figure_pos[i]), lwd=3)
+    #text(c(label_pos, label_pos), c(0.60, 0.60), labels = labels_mthfr[canonical == 1, region_no][i], col="black")
+    #segments(pos-0.002, 0.5-(gap*labels_mthfr$figure_pos[i]), pos+0.002, 0.51-(gap*labels_mthfr$figure_pos[i]), lwd=3)
+    #segments(pos-0.002, 0.5-(gap*labels_mthfr$figure_pos[i]), pos+0.002, 0.49-(gap*labels_mthfr$figure_pos[i]), lwd=3)
 }
 
 for(i in seq(1,nrow(labels_mthfr))){

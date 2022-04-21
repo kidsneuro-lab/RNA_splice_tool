@@ -10,7 +10,7 @@
 # ########################################################################### #
 
 #Parameters
-SampleFile <- "cortar v030 testing samplefile.tsv"
+SampleFile <- "AGRF_blood_batch_1_samplefile.tsv" #"cortar v030 testing samplefile.tsv"
 Assembly <- c("hg38","UCSC") # c(hg38/hg19, UCSC/1000genomes)
 Export <- "../../../Reports/v0.3 Cortar 03.22/testing"
 
@@ -50,7 +50,7 @@ if(Assembly[1] == "hg19"){
 }
 
 
-if(sum(sample_list$genes %in% Refseq_Genes$gene_name) == length(unique(sample_list$genes))){
+if(sum(unique(sample_list$transcript %in% Refseq_Genes$tx_id)) == length(unique(sample_list$genes))){
     message("")
 }else{stop("Gene(s) not found.")}
 
@@ -517,7 +517,7 @@ for(i in seq(1,2)){
 
             #Extracting the columns in the required order
             combined_dt_intron_final <- combined_dt_intron_test[,c("assembly",
-                                                                   infocols[-which(infocols %in% c("introns","normal"))],
+                                                                   infocols[-which(infocols %in% c("normal"))],
                                                                    "SJ_IR","frame_conserved","unique",
                                                                    "proband","difference",familycols,"controlavg",
                                                                    "controlsd","controln", familyreadcols,
@@ -563,8 +563,25 @@ for(i in seq(1,2)){
 
                 combined_dt_intron_test$normal <- as.character(combined_dt_intron_test$normal)
                 fwrite(combined_dt_intron_test[which(combined_dt_intron_test$genes == testgenes)],
-                       file = paste(Export,"/",sample_list$sampleID[sample],"_",testgenes,"_combined_full",
-                                    ".tsv", sep=""))
+                       file = paste0(Export,"/",sample_list$sampleID[sample],"_",testgenes,"_combined_full",
+                                    ".tsv"),sep="\t")
+
+                #topdf <- combined_dt_intron_test[genes == testgenes & two_sd == TRUE,
+                                        #c(event, sj_pct_332_RNASEH2B_P,controlavg,difference,unique)]
+
+                    rmarkdown::render(
+                        input = "test.Rmd",
+                        output_file = paste(Export,"/",sample_list$sampleID[sample],"_",testgenes,"_combined_full",
+                                            ".pdf", sep=""),
+                        params = list("table" = paste(Export,"/",sample_list$sampleID[sample],"_",testgenes,"_combined_full",
+                                                      ".tsv", sep=""),
+                                      "testgenes" = testgenes,
+                                      "control_no" = length(ctrls),
+                                      "sample" = proband,
+                                      "proband" = paste0("sj_pct_", proband),
+                                      "transcripts" = Transcripts,
+                                      "refseq" = Refseq_Genes,
+                                      "strand" = Refseq_Genes[gene_name == testgenes & canonical == 1,strand][1]))
 
                 #rnaseqgrapher(combined_dt_intron_test, testgenes, sample_list$sampleID[sample], "../../Reports/CDK5RAP3/")
 
