@@ -54,16 +54,16 @@ names(table)[which(names(table) == proband)] <- "probandpct"
 ```
 
 ```{r, echo=FALSE}
-exons <- table[two_sd == TRUE & SJ_IR == "SJ" ]
-introns <- table[two_sd == TRUE & SJ_IR == "IR" & normal == "Y"]
+exons <- table[SJ_IR == "SJ" ]
+introns <- table[SJ_IR == "IR" & normal == "Y"]
 ```
 
 ```{r, echo=FALSE}
 table <- rbind(exons, introns)
 table$seqnames <- paste0(table$seqnames,":",table$start,"-",table$end)
-table$difference <- formattable::percent(table$difference)
-table$probandpct <- formattable::percent(table$probandpct)
-table$controlavg <- formattable::percent(table$controlavg)
+table$difference <- formattable::percent(table$difference, digits=1)
+table$probandpct <- formattable::percent(table$probandpct, digits=1)
+table$controlavg <- formattable::percent(table$controlavg, digits=1)
 ```
 
 ```{r, echo=FALSE}
@@ -74,7 +74,7 @@ table$controlavg <- formattable::percent(table$controlavg)
 events <- c()
 
 for(row in seq(1,nrow(table))){
-    unique <- if(length(table[row,unique]) == "") "" else "*"
+    unique <- if(table[row,unique] == "") "" else "*"
     if(table[row,SJ_IR] == "SJ"){
         if(table[row,annotated] == "Y"){
             split <- strsplit(table[row,event]," ")
@@ -105,6 +105,8 @@ for(row in seq(1,nrow(table))){
 table$event <- events
 
 table$frame_conserved[which(is.na(table$frame_conserved))] <- ""
+table$frame_conserved[which(table$frame_conserved == TRUE)] <- "Yes"
+table$frame_conserved[which(table$frame_conserved == FALSE)] <- "No"
 
 
 ```
@@ -113,7 +115,7 @@ table$frame_conserved[which(is.na(table$frame_conserved))] <- ""
 ```{r, echo = FALSE}
 table <- table[order(abs(difference),decreasing = T)]
 
-sig_introns <- unique(table[abs(difference) > 0.05, introns])
+sig_introns <- unique(table[two_sd == TRUE & abs(difference) > 0.05, introns])
 
 no_introns <- length(sig_introns)
 
@@ -138,13 +140,21 @@ for(i in sig_introns){
     
     cat("## ",i)
     
-    introntable <- table[introns == i]
+    introntable <- table[two_sd == TRUE & introns == i]
+    insigrow <- colSums(table[two_sd == FALSE & introns == i,.(difference,probandpct,controlavg)])
+    insigrow <- as.data.table(t(c("","NS events < 2sd",insigrow,"")))
+    insigrow$difference <- formattable::percent(insigrow$difference, digits=1)
+    insigrow$probandpct <- formattable::percent(insigrow$probandpct, digits=1)
+    insigrow$controlavg <- formattable::percent(insigrow$controlavg, digits=1)
     
-    events <- introntable[,.(seqnames,event,probandpct,controlavg,difference,frame_conserved)][order(abs(difference), decreasing = T)]
     
-    names(events) <- c("chr:start-end","event","proband","controls","difference","frame")
+    events <- introntable[,.(seqnames,event,difference,probandpct,controlavg,frame_conserved)][order(abs(difference), decreasing = T)]
     
-    print(knitr::kable(events))
+    names(events) <- c("splice-junction","event","difference","proband","controls","frame")
+    
+    events2 <- rbind(events,insigrow, use.names=FALSE)
+    
+    print(knitr::kable(events2))
     
     cat("\n")
 

@@ -5,3 +5,4 @@ temp*
 .Rproj.user
 *.gff
 full_gene_figure.png
+.Rsubread_UserProvidedAnnotation_pid*
