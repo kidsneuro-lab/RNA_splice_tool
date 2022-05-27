@@ -1,6 +1,6 @@
 # ########################################################################### #
 
-#░▄▀▀░▄▀▄▒█▀▄░▀█▀▒▄▀▄▒█▀▄ v0.1.0                                      Nov 2021
+#░▄▀▀░▄▀▄▒█▀▄░▀█▀▒▄▀▄▒█▀▄ v0.2.0                                      Jan 2022
 #░▀▄▄░▀▄▀░█▀▄░▒█▒░█▀█░█▀▄                        e: rmar4592@uni.sydney.edu.au
 
 
@@ -21,8 +21,14 @@
               # for the left hand side the split read has to end in the intron
               # for the right hand side, the split read has to end in the exon
               # make the deductions before the average
+              # should use either the unique IR junction or the average of the
+                # unique junction and the closest cryptic to the junction
+        # Calculate IR and SJ as the proportion of all reads
+              # It appears as if the overlapping reads are not consistent and
+              # so the proportion of reads won't be comparable over an intron
         # Call proximal variants from RNAseq to measure allele bias
         # Compare VCFs with RNAseq BAMs for AGRF cases
+        # Transcript selection
 
   #== Optimisation ============================================================
         # Optimise splice junction analysis for multiple samples with same gene
@@ -50,7 +56,9 @@
 
 # Load samples for analysis (will be depreciated)
 sample_file.tsv <-
-    "../../Reports/New Feature Development/NFD_Dataset_AGRF.tsv"
+  "../../Reports/New Feature Development/NFD_Dataset_AGRF.tsv"
+  #"../../Reports/rRNA Depleted/CDK5RAP3_subset_RNA_adult.tsv"
+
 
 # Runs the full pipeline
 cortar <- function(sampledata,exportlocation,sampleID="",genes="",alt_genes="",
@@ -73,7 +81,8 @@ cortar <- function(sampledata,exportlocation,sampleID="",genes="",alt_genes="",
                                         sjs.GRanges)
     combinedIntronsExons.dt <<- combine.IR.SJ(combinedIntrons.dt,combined.dts,
                                               sampleList.dt,sjs.GRanges)
-    compare.samples(sampleList.dt, combinedIntronsExons.dt, exportlocation)
+    #compare.samples(sampleList.dt, combinedIntronsExons.dt, exportlocation)
+    compare.samples(sampleList.dt, combinedIntronsExons.dt, "../../Reports/New Feature Development/")
 }
 
 
@@ -96,16 +105,16 @@ load.environment <- function(){
                             "sampletype","genes","alt_genes","bamfile",
                             "variants","VCF")
     infocols <<- c("seqnames","start","end","width","strand","annotated",
-                   "genes","event","introns")
+                   "genes","event","introns","normal")
 
     message("\t","Environment loaded.","\n")
 }
-
 #--Load samples----------------------------------------------------------------
 
 # Loads the .tsv file containing multiple RNAseq files to be analysed
 load.samples <- function(samples, sampleID="",genes="",alt_genes="",
                          assembly="",variants="",VCF=""){
+
 
     message("Loading samples...")
 
@@ -167,9 +176,9 @@ set.assembly <- function(samples){
                                        sep = "\t")
         ensembl_gene_list <<- fread("hg38_mart_export_allgenes_chr1-Y.txt",
                                     sep = "\t")
-        #ensembl <<- useEnsembl(biomart = "genes", host = "www.ensembl.org",
-        #                       version = "104",
-        #                       dataset = "hsapiens_gene_ensembl")
+        ensembl <<- useEnsembl(biomart = "genes", host = "www.ensembl.org",
+                               version = "104",
+                               dataset = "hsapiens_gene_ensembl")
         message("\t","Parameters set for hg38 assembly.","\n")
 
     }else if (identical(unique(samples$assembly),"hg19")){
@@ -300,9 +309,9 @@ extract.gene.ranges <- function(samples){
     genes <- getBM(attributes = c('external_gene_name','chromosome_name',
                                   'start_position','end_position','strand'),
              filters = c('chromosome_name','external_gene_name'),
-             values = list(c(as.character(seq(1,22)), "X", "Y"),
-                           unlist(sapply(unique(samples$genes),strsplit,
-                                         split = ","))),
+             values = list(c(as.character(seq(1,22)), "X", "Y"), c("CDK5RAP3","COL2A1")),
+                           #unlist(sapply(unique(samples$genes),strsplit,
+                           #              split = ","))),
              mart = ensembl,
              uniqueRows = T)
 
@@ -333,7 +342,7 @@ extract.gene.ranges <- function(samples){
 
 #--Obtain Splice Junctions-----------------------------------------------------
 
-# Obtain splice junctions for all samples for selected genes
+# All splice junctions need to be extracted before annotation.
 obtain.SJs <- function(samples){
     message("Obtaining splice junctions...")
     sj = list()
@@ -529,12 +538,14 @@ calculate.SJs <- function(combinedsamples, sj){
                                  exon_range_start, exon_range_end)]
     combineddt[, introns := mapply(gen.introns,
                                    exon_range_start, exon_range_end)]
+    combineddt[, normal := mapply(gen.normal,
+                                  exon_range_start, exon_range_end)]
     combineddt[, genes := mapply(gen.fetch,
                                  exon_range_start, exon_range_end)]
     combineddt[, `:=`(exon_range_start = NULL, exon_range_end = NULL)]
 
     infocols <- c("seqnames","start","end","width","strand","annotated",
-                  "genes","event","introns")
+                  "genes","event","introns","normal")
 
     message("\t","\t","Splice junction usage calculated.","\n")
     return(combineddt)
@@ -566,7 +577,7 @@ extract.IR <- function(samples, combinedsamples, combineddt){
                                     isLongRead=F,
 
                                     # multi-mapping reads
-                                    countMultiMappingReads=TRUE,
+                                    countMultiMappingReads=FALSE,
 
                                     # unstranded case: for counting only
                                     # non-spliced reads we skip this
@@ -600,17 +611,125 @@ extract.IR <- function(samples, combinedsamples, combineddt){
 #--Calculate intron retention--------------------------------------------------
 calculate.IR <- function(combineddt,combinedintron,sj){
     message("Calculating intron retention...")
-    for (sample_name in names(sj)) {
+
+    #combined.dts <- combined.backup.dts
+    #combinedIntrons.dt <- combinedIntrons.backup.dt
+    #combined.backup.dts <<- combined.dts
+    #combinedIntrons.backup.dt <<- combinedIntrons.dt
+
+    skipping_events_exons <<- combined.dts[which(event != "unannotated junctions")]
+    skipping_events_introns <<- combinedIntrons.dt[which(event != "unannotated junctions")]
+
+    skipping_events_exons[, introns :=  sapply(skipping_events_exons$introns,function(x) unlist(strsplit(x,"-"))[2])]
+    combined.dts <<- rbind(combined.dts, skipping_events_exons[!is.na(introns) & normal != "Y"])
+    combined.dts[, introns :=  sapply(combined.dts$introns,function(x) unlist(strsplit(x,"-"))[1])]
+
+    skipping_events_introns[, introns :=  sapply(skipping_events_introns$introns,function(x) unlist(strsplit(x,"-"))[2])]
+    combinedIntrons.dt <<- rbind(combinedIntrons.dt, skipping_events_introns[!is.na(introns) & normal != "Y"])
+    combinedIntrons.dt[, introns :=  sapply(combinedIntrons.dt$introns,function(x) unlist(strsplit(x,"-"))[1])]
+
+
+
+    for (sample_name in names(sjs.GRanges)) {
+
+        message("\t",sample_name)
+
+        overlaps_exons <<- combined.dts[normal == 'Y']
+        overlaps_introns <<- combinedIntrons.dt[normal == 'Y']
+
         ir_column <- paste0("ir_", sample_name)
         sj_column <- paste0("sj_", sample_name)
+        sj_pct_column <- paste0("sj_pct_", sample_name)
+        sj_overlap_column <- paste0("sj_", sample_name, "_overlap")
         ns_left_column <- paste0("left_", sample_name)
         ns_right_column <- paste0("right_", sample_name)
+        total_ir_column <<- paste0("total_ir_", sample_name)
+        total_ir_column_1 <<- paste0("total_ir_1", sample_name)
+        total_sj_column <<- paste0("total_sj_", sample_name)
+        total_sj_column_1 <<- paste0("total_sj_1", sample_name)
 
-        combinedintron[, c(ir_column) :=
-                         nafill(( (get(ns_left_column)/(get(ns_left_column) +
-                                combineddt[[sj_column]])) +
-                                (get(ns_right_column)/(get(ns_right_column) +
-                                combineddt[[sj_column]])) ) / 2, "const", 0)]
+        listofoverlaps_exons <<- list()
+        listofoverlaps_right <<- list()
+        listofoverlaps_left <<- list()
+
+        for(i in seq(1,nrow(combined.dts))){
+          x <- overlaps_exons[which(overlaps_exons$genes == combined.dts$genes[i]&
+                                overlaps_exons$introns == combined.dts$introns[i]),
+                        sj_overlap_column, with = F]
+          y <- overlaps_introns[which(overlaps_introns$genes == combinedIntrons.dt$genes[i]&
+                                overlaps_introns$introns == combinedIntrons.dt$introns[i]),
+                        c(ns_left_column), with = F]
+          z <- overlaps_introns[which(overlaps_introns$genes == combinedIntrons.dt$genes[i]&
+                                overlaps_introns$introns == combinedIntrons.dt$introns[i]),
+                        c(ns_right_column), with = F]
+          listofoverlaps_exons[i] <- x
+          listofoverlaps_right[i] <- y
+          listofoverlaps_left[i] <- z
+        }
+
+        listofoverlaps_exons <<- unlist(ifelse(sapply(listofoverlaps_exons, length) == 0, 0, listofoverlaps_exons))
+        listofoverlaps_right <<- unlist(ifelse(sapply(listofoverlaps_right, length) == 0, 0, listofoverlaps_right))
+        listofoverlaps_left <<- unlist(ifelse(sapply(listofoverlaps_left, length) == 0, 0, listofoverlaps_left))
+
+        combined.dts[, c(total_sj_column_1) := listofoverlaps_exons]
+        #print(unique(combined.dts[,total_sj_column_1, with = F]))
+        combinedIntrons.dt[, c(total_ir_column_1) := (as.numeric(listofoverlaps_right) + as.numeric(listofoverlaps_left))/2]
+        #print(unique(combinedIntrons.dt[,total_ir_column_1, with = F]))
+
+        #print(unique(sapply(c(listofoverlaps_exons,listofoverlaps_left, listofoverlaps_right), class)))
+        #print("\n")
+        overlaps <- (listofoverlaps_exons + (listofoverlaps_right + listofoverlaps_left)/2)
+
+        #print(unique(sapply(c(listofoverlaps_exons,listofoverlaps_left, listofoverlaps_right), class)))
+
+        combined.dts[, c(total_sj_column) := overlaps]
+        #print(sapply(c(listofoverlaps_exons,listofoverlaps_left, listofoverlaps_right), class))
+        #print(unique(combined.dts[,total_sj_column, with = F]))
+        combinedIntrons.dt[, c(total_ir_column) := combined.dts[[total_sj_column]]]
+        #print(unique(combinedIntrons.dt[,total_ir_column, with = F]))
+
+
+        combinedIntrons.dt[, c(ir_column) :=
+                         nafill((get(ns_left_column) + get(ns_right_column))/2 /
+                                  get(total_ir_column),
+                                "const", 0)]
+
+        combinedIntrons.dt[, c(ns_left_column) :=
+                         nafill((get(ns_left_column) + get(ns_right_column))/2,
+                                "const", 0)]
+
+        combined.dts[, c(sj_pct_column) :=
+                     nafill(get(sj_column) / get(total_sj_column),
+                            "const", 0)]
+
+
+                #combinedintron[, c(total_ir_column) :=
+        #                nafill((get(ns_left_column) +
+        #                      combineddt[[sj_overlap_column]]) +
+        #                      (get(ns_right_column) +
+        #                      combineddt[[sj_overlap_column]])  / 2,
+        #                    "const", 0)]
+
+        #combinedintron[, c(total_ir_column) :=
+        #                 nafill(get(total_ir_column) +
+        #                          combineddt[[total_sj_column]],
+        #                        "const", 0)]
+
+
+
+       # combineddt[, c(total_sj_column) := combinedintron[[total_ir_column]]]
+
+
+        #combineddt[, c(total_sj_column) :=
+        #             nafill((get(sj_overlap_column) +
+        #                        ((combinedintron[[ns_left_column]] +
+        #                         combinedintron[[ns_right_column]])/2)),
+        #                        "const", 0)]
+
+
+
+
+
     }
     message("\t","Intron Retention calculated.","\n")
     return(combinedintron)
@@ -632,14 +751,18 @@ combine.IR.SJ <- function(combinedintron, combineddt, samples, sj){
 
     #Combining intron/exon data in a dt and combining read location in a 2nd
     combined_intron_final <- combinedintron[,c(paste0("ir_", names(sj)),
-                                               paste0("left_", names(sj))),
+                                               paste0("left_", names(sj)),
+                                               paste0("total_ir_", names(sj))),
                                             with=F]
     combined_intron_info <- combinedintron[,c(infocols,
                                               "SJ_IR","frame_conserved"),
                                            with = F]
     combined_dt_final <- combineddt[,c(paste0("sj_pct_", names(sj)),
-                                       paste0("sj_", names(sj))), with=F]
-    combined_dt_info <- combineddt[,c(infocols,"SJ_IR","frame_conserved"),
+                                       paste0("sj_", names(sj)),
+                                       paste0("total_sj_", names(sj))),
+                                      with=F]
+    combined_dt_info <- combineddt[,c(infocols,
+                                      "SJ_IR","frame_conserved"),
                                    with = F]
     combined_dt_intron_data <- as.data.table(mapply(c,combined_dt_final,
                                                     combined_intron_final))
@@ -658,8 +781,41 @@ combine.IR.SJ <- function(combinedintron, combineddt, samples, sj){
     return(combined_dt_intron)
 }
 
+#--Calculate true IR-----------------------------------------------------------
+
+# get all IR counts for introns and intronic cryptics
+# annotate data.table with whether each intron has an intronic cryptic
+# use annotation to select counts which will be duplicated - for averaging.
+# continue workflow with adjusted IR counts.
+# what if there are intronic cryptics on both sides of the intron?
+
+#cryptics.df <- combinedIntronsExons.dt[which(SJ_IR == "SJ" & event != "unannotated junctions" &
+#                                annotated == "N")]
+
+#for(i in seq(1,nrow(cryptics.df))){
+
+#  if((cryptics.df$end[i] %in% intronsOfInterest.df$end & cryptics.df$start[i] %in% intronsOfInterest.df$start) == FALSE){
+#    if(cryptics.df$end[i] %in% intronsOfInterest.df$end){
+#      if(cryptics.df$start[i] > intronsOfInterest.df$start[which(intronsOfInterest.df$end == cryptics.df$end[i])]){
+#        cat(c(i," start", "\n"))
+#      }
+#    }else if(cryptics.df$start[i] %in% intronsOfInterest.df$start){
+#      if(cryptics.df$end[i] < intronsOfInterest.df$end[which(intronsOfInterest.df$start == cryptics.df$start[i])]){
+#        cat(c(i," end", "\n"))
+#      }
+#    }
+#  }
 
 
+
+#}
+
+
+#cryptics.df[1,2] < intronsOfInterest.df$start[which(intronsOfInterest.df$end == cryptics.df[1,3])]
+
+
+
+#--Compare splicing between test and controls----------------------------------
 compare.samples <- function(samples, combined_dt_intron, exportlocation){
     message("Comparing samples...")
     for(sample in seq(1,nrow(samples))){
@@ -674,7 +830,9 @@ compare.samples <- function(samples, combined_dt_intron, exportlocation){
             ctrls <- samples$sampleID[which(
                                     samples$family != samples$family[sample] &
                                     samples$gene != samples$gene[sample])]
+            print(ctrls)
             ctrlscols <- paste0("sj_pct_", ctrls)
+            print(ctrlscols)
             ctrlsreadcols <- paste0("sj_", ctrls)
 
             proband <- samples$sampleID[sample]
@@ -721,12 +879,23 @@ compare.samples <- function(samples, combined_dt_intron, exportlocation){
 
         #Extracting the columns in the required order
         combined_dt_intron_final <- combined_dt_intron_test[,c("assembly",
-                                infocols[-which(infocols=="introns")],
+                                infocols[-which(infocols %in% c("introns","normal"))],
                                 "SJ_IR","frame_conserved","unique",
                                 "proband","difference",familycols,"controlavg",
                                 "controlsd","controln", familyreadcols,
                                 "controlavgreads","two_sd","three_sd",
                                 "four_sd"), with=F]
+
+        #combined_dt_intron_final <- combined_dt_intron_test[,c("assembly",
+        #                                    infocols,"SJ_IR",
+        #                                    "frame_conserved","unique",
+        #                                    "proband","difference",
+        #                                    familycols,"controlavg",
+        #                                    "controlsd","controln",
+        #                                    familyreadcols,"controlavgreads",
+        #                                    paste0("total_sj_", family),
+        #                                    "two_sd","three_sd",
+        #                                    "four_sd"), with=F]
 
         #Sort by the greatest difference in percentage
         combined_dt_intron_final <- combined_dt_intron_final[order(
@@ -753,6 +922,14 @@ compare.samples <- function(samples, combined_dt_intron, exportlocation){
                                 combined_dt_intron_final$genes == testgenes)],
                                 length(familycols), testgenes, exportlocation,
                                 samples$sampleID[sample])
+
+                combined_dt_intron_test$normal <- as.character(combined_dt_intron_test$normal)
+                fwrite(combined_dt_intron_test[which(combined_dt_intron_test$genes == testgenes)],
+                       file = paste(exportlocation,"/",samples$sampleID[sample],"_",testgenes,"_combined_full",
+                             ".tsv", sep=""))
+
+                rnaseqgrapher(combined_dt_intron_test, testgenes, samples$sampleID[sample], "../../Reports/CDK5RAP3/")
+
             #}
         }else{
             #Exporting the combined.dt dataframe to an excel spreadsheet
@@ -811,9 +988,13 @@ gen.exon.range <- function(strand, exon_range_start, exon_range_end) {
     exon_ranges <- c(exon_range_start, exon_range_end)
 
     if (!is.na(exon_range_start) & !is.na(exon_range_end)) {
+      if(max(exon_ranges)-min(exon_ranges) == 1){
         return(paste("exon ",min(exon_ranges)," ~ ","exon ",
                      max(exon_ranges)+1, sep="", collapse=""))
-
+      }else{
+        return(paste("exon ",min(exon_ranges)," ~ ","exon ",
+                     max(exon_ranges)+1, sep="", collapse=""))
+      }
     }else if (!is.na(exon_range_start)){
         if (strand == "-"){
             return(paste("cryptic donor", " ~ ", "exon ",
@@ -839,6 +1020,23 @@ gen.exon.range <- function(strand, exon_range_start, exon_range_end) {
     }
 }
 
+gen.normal <- function(exon_range_start, exon_range_end) {
+
+  exon_range_start <- as.numeric(strsplit(exon_range_start,split=" ")[[1]][3])
+  exon_range_end <- as.numeric(strsplit(exon_range_end,split=" ")[[1]][3])
+  exon_ranges <- c(exon_range_start, exon_range_end)
+
+  if (!is.na(exon_range_start) & !is.na(exon_range_end)) {
+    if(max(exon_ranges)-min(exon_ranges) == 0){
+      return(paste("Y"))
+    }else{
+      return("")
+      }
+  }else{
+    return("")
+  }
+}
+
 #Introns
 gen.introns <- function(exon_range_start, exon_range_end) {
 
@@ -847,7 +1045,11 @@ gen.introns <- function(exon_range_start, exon_range_end) {
     exon_ranges <- c(exon_range_start, exon_range_end)
 
     if (!is.na(exon_range_start) & !is.na(exon_range_end)) {
-        return(paste("intron ",min(exon_ranges), sep="", collapse=""))
+      return(paste("intron ",min(exon_ranges, na.rm=T),"-intron ",
+                   max(exon_ranges, na.rm=T),sep="", collapse=""))
+
+    }else if (!is.na(exon_range_start) | !is.na(exon_range_end)) {
+        return(paste("intron ",min(exon_ranges,na.rm=T), sep="", collapse=""))
 
     }else{
         return("")
@@ -965,6 +1167,19 @@ generate.report <- function(data, familymembers, gene, export, sample){
                            ".xlsx", sep=""),
                  overwrite = T)
 }
+
+#Generate Figure
+generate.figure <- function(data, familymembers, gene, export, sample){
+  refseq_introns_exons_of_interest[gene_name == "MTHFR"]
+  unique(refseq_introns_exons_of_interest[gene_name == "MTHFR",tx_len])
+  refseq_introns_exons_of_interest[gene_name == "MTHFR"][1,region_end] -
+  refseq_introns_exons_of_interest[gene_name == "MTHFR"][11,region_end]
+  plot.new()
+  segments(0, height1, 0.8, height1, lwd=2)
+  segments(0, height2, 0.8, height2, lwd=2)
+}
+
+
 
 #Simple code for the opposite of %in%
 `%nin%` <- Negate(`%in%`)
