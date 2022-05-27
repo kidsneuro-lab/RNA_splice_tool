@@ -1,6 +1,6 @@
 library(Rsamtools)
     # read in the bam file
-    bam <- scanBam(sample_list$bamfile[1])[[1]] # the result comes in nested lists
+    bam <- scanBam(sample_list$bamfile[1], region=genes.GRanges)[[1]] # the result comes in nested lists
     # filter reads without match position
     ind <- ! is.na(bam$pos)
     ## remove non-matches, they are not relevant to us

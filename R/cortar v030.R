@@ -10,9 +10,9 @@
 # ########################################################################### #
 
 #Parameters
-SampleFile <- "AGRF_blood_batch_1_samplefile.tsv" #"cortar v030 testing samplefile.tsv"
-Assembly <- c("hg38","UCSC") # c(hg38/hg19, UCSC/1000genomes)
-Export <- "../../../Reports/v0.3 Cortar 03.22/testing"
+SampleFile <- "../../../Reports/v0.3 Cortar 03.22/CAPN3/subset/CAPN3_Perth_RNAseq_CAPN3.tsv" #"cortar v030 testing samplefile.tsv"
+Assembly <- list("hg19","UCSC", FALSE, 0) # hg38/hg19 | UCSC/1000genomes | paired? | stranded (0,1,2)
+Export <- "../../../Reports/v0.3 Cortar 03.22/CAPN3/"
 
 #--Load Environment------------------------------------------------------------
 sapply(c("data.table",
@@ -29,6 +29,7 @@ sapply(c("data.table",
        quietly=T,
        character.only = TRUE)
 
+source("R/auxiliary_functions.R")
 
 
 #--Load Data - samples, refseq/ensembl, UCSC/1000 genomes, hg38/hg19-----------
@@ -50,7 +51,7 @@ if(Assembly[1] == "hg19"){
 }
 
 
-if(sum(unique(sample_list$transcript %in% Refseq_Genes$tx_id)) == length(unique(sample_list$genes))){
+if(sum(sample_list$transcript %in% Refseq_Genes$tx_id) == length(sample_list$genes)){
     message("")
 }else{stop("Gene(s) not found.")}
 
@@ -68,7 +69,8 @@ genes.GRanges <- GRanges(seqnames = Genes$`Chromosome/scaffold name`,
                                  end = Genes$`Gene end (bp)`),
                          strand = Genes$Strand)
 
-if(Assembly[2] == "UCSC") seqlevelsStyle(genes.GRanges) <- 'UCSC'
+#if(Assembly[2] == "UCSC")
+    seqlevelsStyle(genes.GRanges) <- 'UCSC'
 
 if(nrow(Genes) == length(unique(sample_list$genes))){
     message("")
@@ -77,17 +79,21 @@ if(nrow(Genes) == length(unique(sample_list$genes))){
 #--Extract Reads---------------------------------------------------------------
 sj = list()
 
-param <- ScanBamParam(which = genes.GRanges,
+param <- ScanBamParam(which=genes.GRanges,
                       flag=scanBamFlag(isDuplicate = FALSE,
                                        isSecondaryAlignment = F,
-                                       isPaired = T))
+                                       isPaired = Assembly[[3]]))
 
 for (i in 1:nrow(sample_list)) {
     sample <- sample_list[i, sampleID]
     message("\t", sample)
-
-    gal <- readGAlignmentPairs(file = sample_list[i, bamfile],
-                               param = param, strandMode = 2)
+    if(Assembly[4] == 0){
+        gal <- readGAlignments(file = sample_list[i, bamfile],
+                                   param = param)
+    }else{
+        gal <- readGAlignmentPairs(file = sample_list[i, bamfile],
+                               param = param, strandMode = Assembly[[4]])
+    }
     sj[[sample]] <- summarizeJunctions(gal,genome = Genome_Assembly)
     strand(sj[[sample]]) <- mcols(sj[[sample]])[,"intron_strand"]
 }
@@ -118,7 +124,7 @@ introns_of_interest <- GRanges(seqnames = Sample_Refseq_Genes$chrom,
                                        end = Sample_Refseq_Genes$region_end),
                                strand = as.factor(Sample_Refseq_Genes$strand))
 
-if (Assembly[1] == "hg38") seqlevelsStyle(introns_of_interest) <- 'UCSC'
+if (Assembly[2] == "UCSC") seqlevelsStyle(introns_of_interest) <- 'UCSC'
 
     mcols(introns_of_interest)['exon_no'] <- paste(
         Sample_Refseq_Genes$gene_name,
@@ -213,7 +219,7 @@ rightparams <- c(end,-2,-1,"RHS")
 leftparams <- c(start,+1,+2,"LHS")
 IRparams <- list(leftparams,rightparams)
 for(i in seq(1,2)){
-        sj_start_pos <- GRanges(seqnames = seqnames(combined_sj),
+        sj_start_pos <<- GRanges(seqnames = seqnames(combined_sj),
                                 ranges = IRanges(
                                     start = IRparams[[i]][[1]](combined_sj) + IRparams[[i]][[2]],
                                     end = IRparams[[i]][[1]](combined_sj) + IRparams[[i]][[3]]),
@@ -224,7 +230,7 @@ for(i in seq(1,2)){
                                         minOverlap=5*2,
                                         allowMultiOverlap=TRUE,
                                         checkFragLength=FALSE,
-                                        strandSpecific=2,
+                                        strandSpecific=Assembly[[4]],
 
                                         # activating long read mode
                                         isLongRead=F,
@@ -235,7 +241,7 @@ for(i in seq(1,2)){
                                         # unstranded case: for counting only
                                         # non-spliced reads we skip this
                                         #information
-                                        isPairedEnd=T,
+                                        isPairedEnd=Assembly[[3]],
                                         nonSplitOnly = T,
 
                                         # sorting only needed for paired-end reads
@@ -597,271 +603,3 @@ for(i in seq(1,2)){
             }
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-gen.exon.range <- function(strand, exon_range_start, exon_range_end) {
-
-    exon_range_start <- as.numeric(strsplit(exon_range_start,split=" ")[[1]][3])
-    exon_range_end <- as.numeric(strsplit(exon_range_end,split=" ")[[1]][3])
-    exon_ranges <- c(exon_range_start, exon_range_end)
-
-    if (!is.na(exon_range_start) & !is.na(exon_range_end)) {
-        if(max(exon_ranges)-min(exon_ranges) == 1){
-            return(paste("exon ",min(exon_ranges)," ~ ","exon ",
-                         max(exon_ranges)+1, sep="", collapse=""))
-        }else{
-            return(paste("exon ",min(exon_ranges)," ~ ","exon ",
-                         max(exon_ranges)+1, sep="", collapse=""))
-        }
-    }else if (!is.na(exon_range_start)){
-        if (strand == "-"){
-            return(paste("cryptic donor", " ~ ", "exon ",
-                         exon_range_start+1, sep="", collapse=""))
-        }
-        if (strand == "+"){
-            return(paste("exon ",exon_range_start, " ~ ",
-                         "cryptic acceptor", sep="", collapse=""))
-        }
-
-
-    }else if (!is.na(exon_range_end)){
-        if (strand == "-"){
-            return(paste("exon ", exon_range_end, " ~ ",
-                         "cryptic acceptor", sep="", collapse=""))
-        }
-        if (strand == "+"){
-            return(paste("cryptic donor", " ~ ", "exon ",
-                         exon_range_end+1, sep="", collapse=""))
-        }
-    }else{
-        return("unannotated junctions")
-    }
-}
-
-gen.normal <- function(exon_range_start, exon_range_end) {
-
-    exon_range_start <- as.numeric(strsplit(exon_range_start,split=" ")[[1]][3])
-    exon_range_end <- as.numeric(strsplit(exon_range_end,split=" ")[[1]][3])
-    exon_ranges <- c(exon_range_start, exon_range_end)
-
-    if (!is.na(exon_range_start) & !is.na(exon_range_end)) {
-        if(max(exon_ranges)-min(exon_ranges) == 0){
-            return(paste("Y"))
-        }else{
-            return("")
-        }
-    }else{
-        return("")
-    }
-}
-
-#Introns
-gen.introns <- function(exon_range_start, exon_range_end) {
-
-    exon_range_start <-as.numeric(strsplit(exon_range_start,split=" ")[[1]][3])
-    exon_range_end <- as.numeric(strsplit(exon_range_end,split=" ")[[1]][3])
-    exon_ranges <- c(exon_range_start, exon_range_end)
-
-    if (!is.na(exon_range_start) & !is.na(exon_range_end)) {
-        return(paste("intron ",min(exon_ranges, na.rm=T),"-intron ",
-                     max(exon_ranges, na.rm=T),sep="", collapse=""))
-
-    }else if (!is.na(exon_range_start) | !is.na(exon_range_end)) {
-        return(paste("intron ",min(exon_ranges,na.rm=T), sep="", collapse=""))
-
-    }else{
-        return("")
-    }
-}
-
-#Add gene names
-gen.fetch <- function(exon_range_start, exon_range_end) {
-
-    exon_range_start <- strsplit(exon_range_start,split=" ")[[1]][1]
-    exon_range_end <- strsplit(exon_range_end,split=" ")[[1]][1]
-
-    if (!is.na(exon_range_start) & !is.na(exon_range_end)) {
-        return(exon_range_start)
-    }else if (!is.na(exon_range_start)){
-        return(exon_range_start)
-    }else if (!is.na(exon_range_end)){
-        return(exon_range_end)
-    }else{
-        return("no gene")
-    }
-}
-
-#Calculate event frame
-framed <- function(event, x,y){
-    rfsq <- Refseq_Genes
-    frame <- c()
-
-    for(i in seq(1,length(x))){
-        rg_event <- event[i]
-        rg_start <- x[i]
-        rg_end <- y[i]
-        if(event[i] == "SJ"){
-            #is the start/end annotated
-            #both annotated
-            if(rg_start %in% rfsq$region_start & rg_end %in% rfsq$region_end){
-                pairstart <-rfsq$region_start[which(rfsq$region_end == rg_end)]
-                pairend <-rfsq$region_end[which(rfsq$region_start == rg_start)]
-                if(rg_end == pairend){
-                    frame[i] <- TRUE
-                } else{
-                    dist2authentic <- abs(rg_end-pairend)
-                    frame[i] <- dist2authentic%%3 == 0
-                }
-            }
-            #start annotated
-            else if(rg_start %in% rfsq$region_start){
-                pairend <-rfsq$region_end[which(rfsq$region_start == rg_start)]
-                dist2authentic <- abs(rg_end-pairend)
-                frame[i] <- dist2authentic%%3 == 0
-            }
-            #end annotated
-            else if(rg_end %in% rfsq$region_end){
-                pairstart <-rfsq$region_start[which(rfsq$region_end == rg_end)]
-                dist2authentic <- abs(rg_start-pairstart)
-                frame[i] <- dist2authentic%%3 == 0
-            }
-            #unannotated junctions
-            else{
-                frame[i] <- NA
-            }
-
-        }else{
-            frame[i] <- ""
-        }
-    }
-    return(frame)
-}
-
-#Generate Report
-generate.report <- function(data, familymembers, gene, export, sample){
-
-    # Create an Excel workbook object and add a worksheet
-    wb <- createWorkbook()
-    sht <- addWorksheet(wb, gene)
-
-    # Create a percent style
-    pct <- createStyle(numFmt='PERCENTAGE')
-    twodp <- createStyle(numFmt='0.00')
-    centre <- createStyle(halign = "center")
-    headerStyle <- createStyle(textRotation = 45, fgFill = "#4F81BD",
-                               textDecoration = "bold", fontColour = "white")
-
-    # Add data to the worksheet
-    writeDataTable(wb, sht, data)
-
-    # Add the percent, centre, and header styles to the desired cells
-    addStyle(wb, sht, style=pct, cols = c(14:(17+familymembers-1)),
-             rows = 2:(nrow(data)+1), gridExpand=TRUE)
-    #note this may change with additional family members
-    addStyle(wb, sht, style=centre, cols = c(1,6:8,10:12),
-             rows = 2:(nrow(data)+1), gridExpand=TRUE)
-    addStyle(wb, sht, headerStyle, cols = 1:(ncol(data)+1),
-             rows = 1, gridExpand = TRUE)
-    addStyle(wb, sht, twodp, cols = 22, rows = 2:(nrow(data)+1),
-             gridExpand = TRUE)
-
-    # Set column widths for event and proband - Currently not working 20211013
-    #width_vec <- apply(data, 2, function(x) max(nchar(as.character(x)) + 2,
-    #na.rm = TRUE))
-    #setColWidths(wb, sht, cols = c(9,12), widths = width_vec[c(9,12)])
-
-    # Add conditionalFormatting to difference and percentage columns
-    conditionalFormatting(wb, sht, cols=c(15:(17+familymembers-1)),
-                          rows = 2:(nrow(data)+1),
-                          rule = NULL, style = c("#FCFCFF","#63BE7B"),
-                          type = "colourScale")
-
-    conditionalFormatting(wb, sht, cols=c(14), rows = 2:(nrow(data)+1),
-                          rule = NULL, style=c("#F8696B","#FCFCFF","#F8696B"),
-                          type = "colourScale")
-
-    # Export report
-    saveWorkbook(wb, paste(export,"/",sample,"_",gene,"_combined_dt_",
-                           ".xlsx", sep=""),
-                 overwrite = T)
-}
-
-#Simple code for the opposite of %in%
-`%nin%` <- Negate(`%in%`)
-
-GRanges.to.SAF <- function(gr, minAnchor=1){
-    data.table(
-        GeneID  = seq_along(gr),
-        Chr     = as.factor(seqnames(gr)),
-        Start   = start(gr) - (minAnchor - 1),
-        End     = end(gr) + (minAnchor - 1),
-        Strand  = as.factor(strand(gr))
-    )
-}
-
-library(Rsamtools)
-#bamcoverage <- function (sample_list$bamfile[1]) {
-    # read in the bam file
-    bam <- scanBam(sample_list$bamfile[1])[[1]] # the result comes in nested lists
-    # filter reads without match position
-    ind <- ! is.na(bam$pos)
-    ## remove non-matches, they are not relevant to us
-    bam <- lapply(bam, function(x) x[ind])
-    ranges <- IRanges(start=bam$pos, width=bam$qwidth, names=make.names(bam$qname, unique=TRUE))
-    ## names of the bam data frame:
-    ## "qname"  "flag"   "rname"  "strand" "pos"    "qwidth"
-    ## "mapq"   "cigar"  "mrnm"   "mpos"   "isize"  "seq"    "qual"
-    ## construc: genomic ranges object containing all reads
-    ranges <- GRanges(seqnames=Rle(bam$rname), ranges=ranges, strand=Rle(bam$strand), flag=bam$flag, readid=bam$rname )
-    ## returns a coverage for each reference sequence (aka. chromosome) in the bam file
-    #return
-
-    qryhits <- findOverlaps(introns_of_interest, ranges, type = "start")
-    #mcols(combined_sj[subjectHits(qryhits)])['exon_range_start'] <- mcols(
-    #    introns_of_interest[queryHits(qryhits)])[,'exon_no']
-
-    (mean(coverage(ranges)))
-#}
