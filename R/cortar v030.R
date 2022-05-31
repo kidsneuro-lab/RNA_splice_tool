@@ -472,8 +472,8 @@ for(i in seq(1,2)){
             familyreadcols <- paste0("sj_", family)
 
             ctrls <- sample_list$sampleID[which(
-                sample_list$family != sample_list$family[sample] &
-                    sample_list$gene != sample_list$gene[sample])]
+                sample_list$family != sample_list$family[sample])]# &
+                #sample_list$gene != sample_list$gene[sample])]
             print(ctrls)
             ctrlscols <- paste0("sj_pct_", ctrls)
             print(ctrlscols)
