@@ -40,7 +40,7 @@ strand <- params$strand
 # CORTAR v0.3.0
 ## `r sample`
 ## Significantly different splicing events (>2SD) compared to `r control_number` controls.
-### Details:
+## Details:
 - Provider: `r provider`
 - RNA-seq: `r type`
 - Controls: `r control_number` `r matched`
@@ -130,10 +130,30 @@ Events marked with an asterisk (*) are unique to the proband and any family memb
 ```{r, echo = FALSE, include=FALSE}
 full_gene_figure(testgenes, transcripts, sig_introns_no, strand)
 # Close the graphics device
+```
+
+
+```{r, results='asis'}
+cat("## ","Disruptions to Normal Splicing")
+    
+normaltable <- table[two_sd == TRUE & introns %in% sig_introns & SJ_IR == "SJ" & annotated == "Y"]
+events <- normaltable[,.(seqnames,event,difference,probandpct,controlavg,frame_conserved)][order(abs(difference), decreasing = T)]
+names(events) <- c("splice-junction","event","difference","proband","controls","frame")
+
+```
+
+```{r, echo = FALSE, include=FALSE}
+normalChangeBarPlot(normaltable)
+# Close the graphics device
 dev.off()
 ```
 
-![`r testgenes`](full_gene_figure.png)
+```{r, results='asis'}    
+print(knitr::kable(events))
+    
+cat("\n")
+```
+
 
 ```{r, results='asis'}
 for(i in sig_introns){
@@ -142,7 +162,7 @@ for(i in sig_introns){
     
     introntable <- table[two_sd == TRUE & introns == i]
     insigrow <- colSums(table[two_sd == FALSE & introns == i,.(difference,probandpct,controlavg)])
-    insigrow <- as.data.table(t(c("","NS events < 2sd",insigrow,"")))
+    insigrow <- as.data.table(t(c("","non-significant events",insigrow,"")))
     insigrow$difference <- formattable::percent(insigrow$difference, digits=1)
     insigrow$probandpct <- formattable::percent(insigrow$probandpct, digits=1)
     insigrow$controlavg <- formattable::percent(insigrow$controlavg, digits=1)
@@ -162,5 +182,7 @@ for(i in sig_introns){
 ```
 
 
+![`r testgenes`](full_gene_figure.png)
+![`r testgenes`](normal_change_barplot.png)
 
 

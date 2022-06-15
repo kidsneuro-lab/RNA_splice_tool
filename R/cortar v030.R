@@ -10,9 +10,15 @@
 # ########################################################################### #
 
 #Parameters
-SampleFile <- "../../../Reports/v0.3 Cortar 03.22/CAPN3/subset/CAPN3_Perth_RNAseq_CAPN3.tsv" #"cortar v030 testing samplefile.tsv"
-Assembly <- list("hg19","UCSC", FALSE, 0) # hg38/hg19 | UCSC/1000genomes | paired? | stranded (0,1,2)
-Export <- "../../../Reports/v0.3 Cortar 03.22/CAPN3/"
+<<<<<<< Updated upstream
+SampleFile <- "../../../Reports/v0.4 Cortar 05.22/AGRF Batch 3/Blood/AGRF_all_blood_subset_samplefile.tsv"
+Assembly <- list("hg38","UCSC", TRUE, 2) # hg38/hg19 | UCSC/1000genomes | paired? | stranded (0,1,2)
+Export <- "../../../Reports/v0.4 Cortar 05.22/AGRF Batch 3/Blood/tissue subset"
+=======
+SampleFile <- "../../../Reports/v0.3 Cortar 03.22/report development/AGRF_blood_batch_1_samplefile.tsv" #"cortar v030 testing samplefile.tsv"
+Assembly <- list("hg38","UCSC", TRUE, 2) # hg38/hg19 | UCSC/1000genomes | paired? | stranded (0,1,2)
+Export <- "../../../Reports/v0.3 Cortar 03.22/report development"
+>>>>>>> Stashed changes
 
 #--Load Environment------------------------------------------------------------
 sapply(c("data.table",
@@ -117,7 +123,7 @@ for (sample in sample_list$sampleID) {
 #--Annotate exons--------------------------------------------------------------
 Sample_Refseq_Genes <- Refseq_Genes[tx_id %in% Transcripts &
                                     gene_name %in% Genes$`Gene name` &
-                                    region_type == 'intron']
+                                    region_type == c('intron')]
 
 introns_of_interest <- GRanges(seqnames = Sample_Refseq_Genes$chrom,
                                IRanges(start = Sample_Refseq_Genes$region_start,
@@ -126,24 +132,30 @@ introns_of_interest <- GRanges(seqnames = Sample_Refseq_Genes$chrom,
 
 if (Assembly[2] == "UCSC") seqlevelsStyle(introns_of_interest) <- 'UCSC'
 
-    mcols(introns_of_interest)['exon_no'] <- paste(
-        Sample_Refseq_Genes$gene_name,
-        " In ", Sample_Refseq_Genes$region_no, "", sep="")
+    mcols(introns_of_interest)['intron_no'] <- paste(
+        " Intron ", Sample_Refseq_Genes$region_no, "", sep="")
 
-    mcols(combined_sj)['exon_range_start'] <- NA
-    mcols(combined_sj)['exon_range_end'] <- NA
+    mcols(introns_of_interest)['genes'] <- Sample_Refseq_Genes$gene_name
+
+    mcols(combined_sj)['intron_range_start'] <- NA
+    mcols(combined_sj)['intron_range_end'] <- NA
+    mcols(combined_sj)['genes'] <- NA
     mcols(combined_sj)['annotated'] <- 'N'
 
     qryhits <- findOverlaps(introns_of_interest, combined_sj, type = "start")
-    mcols(combined_sj[subjectHits(qryhits)])['exon_range_start'] <- mcols(
-        introns_of_interest[queryHits(qryhits)])[,'exon_no']
+    mcols(combined_sj[subjectHits(qryhits)])['intron_range_start'] <- mcols(
+        introns_of_interest[queryHits(qryhits)])[,'intron_no']
 
     qryhits <- findOverlaps(introns_of_interest, combined_sj, type = "end")
-    mcols(combined_sj[subjectHits(qryhits)])['exon_range_end'] <- mcols(
-        introns_of_interest[queryHits(qryhits)])[,'exon_no']
+    mcols(combined_sj[subjectHits(qryhits)])['intron_range_end'] <- mcols(
+        introns_of_interest[queryHits(qryhits)])[,'intron_no']
 
     qryhits <- findOverlaps(introns_of_interest,combined_sj, type = "equal")
     mcols(combined_sj[subjectHits(qryhits)])['annotated'] <- "Y"
+
+    qryhits <- findOverlaps(introns_of_interest, combined_sj, type = "any")
+    mcols(combined_sj[subjectHits(qryhits)])['genes'] <- mcols(
+        introns_of_interest[queryHits(qryhits)])[,'genes']
 
 #--Extract Splice Junctions from Samples---------------------------------------
 
@@ -205,14 +217,14 @@ for (sample_name in names(sj)) {
 combineddt <- as.data.table(combined.dt)
 
 combineddt[, event := mapply(gen.exon.range, strand,
-                                 exon_range_start, exon_range_end)]
+                                 intron_range_start, intron_range_end)]
 combineddt[, introns := mapply(gen.introns,
-                                   exon_range_start, exon_range_end)]
+                               intron_range_start, intron_range_end)]
 combineddt[, normal := mapply(gen.normal,
-                                  exon_range_start, exon_range_end)]
+                              intron_range_start, intron_range_end)]
 combineddt[, genes := mapply(gen.fetch,
-                                 exon_range_start, exon_range_end)]
-combineddt[, `:=`(exon_range_start = NULL, exon_range_end = NULL)]
+                             intron_range_start, intron_range_end)]
+combineddt[, `:=`(intron_range_start = NULL, intron_range_end = NULL)]
 
 #--Extract Intron Retention from Samples---------------------------------------
 rightparams <- c(end,-2,-1,"RHS")
@@ -472,8 +484,8 @@ for(i in seq(1,2)){
             familyreadcols <- paste0("sj_", family)
 
             ctrls <- sample_list$sampleID[which(
-                sample_list$family != sample_list$family[sample] &
-                    sample_list$gene != sample_list$gene[sample])]
+                sample_list$family != sample_list$family[sample])]# &
+                #sample_list$gene != sample_list$gene[sample])]
             print(ctrls)
             ctrlscols <- paste0("sj_pct_", ctrls)
             print(ctrlscols)
@@ -553,6 +565,7 @@ for(i in seq(1,2)){
                 combined_dt_intron_final$event == "unannotated junctions")]
 
             report <- T
+            summaryreport <- T
 
             testgenes <- unique(sample_list$genes[sample])
 
@@ -574,11 +587,11 @@ for(i in seq(1,2)){
 
                 #topdf <- combined_dt_intron_test[genes == testgenes & two_sd == TRUE,
                                         #c(event, sj_pct_332_RNASEH2B_P,controlavg,difference,unique)]
-
+                if(summaryreport == TRUE){
                     rmarkdown::render(
-                        input = "test.Rmd",
+                        input = "test_html.Rmd",
                         output_file = paste(Export,"/",sample_list$sampleID[sample],"_",testgenes,"_combined_full",
-                                            ".pdf", sep=""),
+                                            ".html", sep=""),
                         params = list("table" = paste(Export,"/",sample_list$sampleID[sample],"_",testgenes,"_combined_full",
                                                       ".tsv", sep=""),
                                       "testgenes" = testgenes,
@@ -588,7 +601,7 @@ for(i in seq(1,2)){
                                       "transcripts" = Transcripts,
                                       "refseq" = Refseq_Genes,
                                       "strand" = Refseq_Genes[gene_name == testgenes & canonical == 1,strand][1]))
-
+                }
                 #rnaseqgrapher(combined_dt_intron_test, testgenes, sample_list$sampleID[sample], "../../Reports/CDK5RAP3/")
 
                 #}
