@@ -11,3 +11,4 @@ test_html_cache/*
 *.png
 samplefiles/*
 figs/*
+cortar.Rproj
