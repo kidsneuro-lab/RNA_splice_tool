@@ -315,7 +315,7 @@ splicingFrameConsequences <- function(table,intron){
     names(table_frame_mat) <- c("controlavg","proband")
     row.names(table_frame_mat) <- c("normal-splicing","in-frame","out-of-frame","intron-retention")
 
-    barplot(table_frame_mat,
+    barplot(table_frame_mat ~ names(table_frame_mat),
             col = c("white","red","yellow","black"),
             las = 2,
             legend = FALSE, beside = TRUE, space=c(0,1),

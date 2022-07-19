@@ -8,3 +8,6 @@ full_gene_figure.png
 .Rsubread_UserProvidedAnnotation_pid*
 hpc/*
 test_html_cache/*
+*.png
+samplefiles/*
+figs/*

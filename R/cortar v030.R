@@ -10,15 +10,9 @@
 # ########################################################################### #
 
 #Parameters
-<<<<<<< Updated upstream
-SampleFile <- "../../../Reports/v0.4 Cortar 05.22/AGRF Batch 3/Blood/AGRF_all_blood_subset_samplefile.tsv"
+SampleFile <- "../../../Reports/v0.4 Cortar 05.22/AGRF Batch 3/Blood/AGRF_blood_batch_3_samplefile.tsv"
 Assembly <- list("hg38","UCSC", TRUE, 2) # hg38/hg19 | UCSC/1000genomes | paired? | stranded (0,1,2)
-Export <- "../../../Reports/v0.4 Cortar 05.22/AGRF Batch 3/Blood/tissue subset"
-=======
-SampleFile <- "../../../Reports/v0.3 Cortar 03.22/report development/AGRF_blood_batch_1_samplefile.tsv" #"cortar v030 testing samplefile.tsv"
-Assembly <- list("hg38","UCSC", TRUE, 2) # hg38/hg19 | UCSC/1000genomes | paired? | stranded (0,1,2)
-Export <- "../../../Reports/v0.3 Cortar 03.22/report development"
->>>>>>> Stashed changes
+Export <- "../../../Reports/v0.4 Cortar 05.22/AGRF Batch 3/Blood/test"
 
 #--Load Environment------------------------------------------------------------
 sapply(c("data.table",
@@ -248,7 +242,7 @@ for(i in seq(1,2)){
                                         isLongRead=F,
 
                                         # multi-mapping reads
-                                        countMultiMappingReads=FALSE,
+                                        countMultiMappingReads=TRUE,
 
                                         # unstranded case: for counting only
                                         # non-spliced reads we skip this
@@ -277,12 +271,6 @@ for(i in seq(1,2)){
 }
 
 #--Calculate intron retention--------------------------------------------------
-
-    #combined.dt <- combined.backup.dts
-    #combinedintron <- combinedIntrons.backup.dt
-    #combined.backup.dts <<- combineddt
-    #combinedIntrons.backup.dt <<- combinedintron
-
     skipping_events_exons <- combineddt[which(event != "unannotated junctions")]
     skipping_events_introns <- combinedintron[which(event != "unannotated junctions")]
 
@@ -338,22 +326,14 @@ for(i in seq(1,2)){
         listofoverlaps_left <<- unlist(ifelse(sapply(listofoverlaps_left, length) == 0, 0, listofoverlaps_left))
 
         combineddt[, c(total_sj_column_1) := listofoverlaps_exons]
-        #print(unique(combineddt[,total_sj_column_1, with = F]))
-        combinedintron[, c(total_ir_column_1) := (as.numeric(listofoverlaps_right) + as.numeric(listofoverlaps_left))/2]
-        #print(unique(combinedintron[,total_ir_column_1, with = F]))
 
-        #print(unique(sapply(c(listofoverlaps_exons,listofoverlaps_left, listofoverlaps_right), class)))
-        #print("\n")
+        combinedintron[, c(total_ir_column_1) := (as.numeric(listofoverlaps_right) + as.numeric(listofoverlaps_left))/2]
+
         overlaps <- (listofoverlaps_exons + (listofoverlaps_right + listofoverlaps_left)/2)
 
-        #print(unique(sapply(c(listofoverlaps_exons,listofoverlaps_left, listofoverlaps_right), class)))
-
         combineddt[, c(total_sj_column) := overlaps]
-        #print(sapply(c(listofoverlaps_exons,listofoverlaps_left, listofoverlaps_right), class))
-        #print(unique(combineddt[,total_sj_column, with = F]))
-        combinedintron[, c(total_ir_column) := combineddt[[total_sj_column]]]
-        #print(unique(combinedintron[,total_ir_column, with = F]))
 
+        combinedintron[, c(total_ir_column) := combineddt[[total_sj_column]]]
 
         combinedintron[, c(ir_column) :=
                                nafill((get(ns_left_column) + get(ns_right_column))/2 /
@@ -367,35 +347,6 @@ for(i in seq(1,2)){
         combineddt[, c(sj_pct_column) :=
                          nafill(get(sj_column) / get(total_sj_column),
                                 "const", 0)]
-
-
-        #combinedintron[, c(total_ir_column) :=
-        #                nafill((get(ns_left_column) +
-        #                      combineddt[[sj_overlap_column]]) +
-        #                      (get(ns_right_column) +
-        #                      combineddt[[sj_overlap_column]])  / 2,
-        #                    "const", 0)]
-
-        #combinedintron[, c(total_ir_column) :=
-        #                 nafill(get(total_ir_column) +
-        #                          combineddt[[total_sj_column]],
-        #                        "const", 0)]
-
-
-
-        # combineddt[, c(total_sj_column) := combinedintron[[total_ir_column]]]
-
-
-        #combineddt[, c(total_sj_column) :=
-        #             nafill((get(sj_overlap_column) +
-        #                        ((combinedintron[[ns_left_column]] +
-        #                         combinedintron[[ns_right_column]])/2)),
-        #                        "const", 0)]
-
-
-
-
-
     }
 
 
@@ -438,40 +389,6 @@ for(i in seq(1,2)){
     combined_dt_intron$introns[which(combined_dt_intron$introns != "" &
                                              combined_dt_intron$SJ_IR == "IR")]
     combined_dt_intron$assembly <- Assembly[1]
-
-#--Calculate true IR-----------------------------------------------------------
-
-# get all IR counts for introns and intronic cryptics
-# annotate data.table with whether each intron has an intronic cryptic
-# use annotation to select counts which will be duplicated - for averaging.
-# continue workflow with adjusted IR counts.
-# what if there are intronic cryptics on both sides of the intron?
-
-#cryptics.df <- combinedIntronsExons.dt[which(SJ_IR == "SJ" & event != "unannotated junctions" &
-#                                annotated == "N")]
-
-#for(i in seq(1,nrow(cryptics.df))){
-
-#  if((cryptics.df$end[i] %in% intronsOfInterest.df$end & cryptics.df$start[i] %in% intronsOfInterest.df$start) == FALSE){
-#    if(cryptics.df$end[i] %in% intronsOfInterest.df$end){
-#      if(cryptics.df$start[i] > intronsOfInterest.df$start[which(intronsOfInterest.df$end == cryptics.df$end[i])]){
-#        cat(c(i," start", "\n"))
-#      }
-#    }else if(cryptics.df$start[i] %in% intronsOfInterest.df$start){
-#      if(cryptics.df$end[i] < intronsOfInterest.df$end[which(intronsOfInterest.df$start == cryptics.df$start[i])]){
-#        cat(c(i," end", "\n"))
-#      }
-#    }
-#  }
-
-
-
-#}
-
-
-#cryptics.df[1,2] < intronsOfInterest.df$start[which(intronsOfInterest.df$end == cryptics.df[1,3])]
-
-
 
 #--Compare splicing between test and controls----------------------------------
     for(sample in seq(1,nrow(sample_list))){
@@ -542,17 +459,6 @@ for(i in seq(1,2)){
                                                                    "controlavgreads","two_sd","three_sd",
                                                                    "four_sd"), with=F]
 
-            #combined_dt_intron_final <- combined_dt_intron_test[,c("assembly",
-            #                                    infocols,"SJ_IR",
-            #                                    "frame_conserved","unique",
-            #                                    "proband","difference",
-            #                                    familycols,"controlavg",
-            #                                    "controlsd","controln",
-            #                                    familyreadcols,"controlavgreads",
-            #                                    paste0("total_sj_", family),
-            #                                    "two_sd","three_sd",
-            #                                    "four_sd"), with=F]
-
             #Sort by the greatest difference in percentage
             combined_dt_intron_final <- combined_dt_intron_final[order(
                 abs(combined_dt_intron_final$difference), decreasing = T),]
@@ -565,28 +471,21 @@ for(i in seq(1,2)){
                 combined_dt_intron_final$event == "unannotated junctions")]
 
             report <- T
-            summaryreport <- T
+            summaryreport <- F
 
             testgenes <- unique(sample_list$genes[sample])
 
             if(report == TRUE){
-                #for(i in seq(0,length(testgenes))){
-                #combined_dt_intron_final <- combined_dt_intron_final[which(
-                #combined_dt_intron_final$genes == testgenes[i])]
-                #combined_dt_intron_final <- combined_dt_intron_final[which(
-                #combined_dt_intron_final$two_sd == TRUE)]
-                generate.report(combined_dt_intron_final[which(
-                    combined_dt_intron_final$genes == testgenes)],
+                generate.report(combined_dt_intron_final,#[which(
+                    #combined_dt_intron_final$genes == testgenes)],
                     length(familycols), testgenes, Export,
                     sample_list$sampleID[sample])
 
                 combined_dt_intron_test$normal <- as.character(combined_dt_intron_test$normal)
-                fwrite(combined_dt_intron_test[which(combined_dt_intron_test$genes == testgenes)],
+                fwrite(combined_dt_intron_test,#[which(combined_dt_intron_test$genes == testgenes)],
                        file = paste0(Export,"/",sample_list$sampleID[sample],"_",testgenes,"_combined_full",
                                     ".tsv"),sep="\t")
 
-                #topdf <- combined_dt_intron_test[genes == testgenes & two_sd == TRUE,
-                                        #c(event, sj_pct_332_RNASEH2B_P,controlavg,difference,unique)]
                 if(summaryreport == TRUE){
                     rmarkdown::render(
                         input = "test_html.Rmd",
@@ -602,9 +501,6 @@ for(i in seq(1,2)){
                                       "refseq" = Refseq_Genes,
                                       "strand" = Refseq_Genes[gene_name == testgenes & canonical == 1,strand][1]))
                 }
-                #rnaseqgrapher(combined_dt_intron_test, testgenes, sample_list$sampleID[sample], "../../Reports/CDK5RAP3/")
-
-                #}
             }else{
                 #Exporting the combineddt dataframe to an excel spreadsheet
                 openxlsx::write.xlsx(combined_dt_intron_final,
@@ -616,3 +512,4 @@ for(i in seq(1,2)){
             }
         }
     }
+
