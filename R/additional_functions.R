@@ -161,7 +161,7 @@ GRanges.to.SAF <- function(gr, minAnchor=1){
 
 full_gene_figure <- function(gene,tx,sig_introns,strand){
 
-    refseq <- fread("refseq_introns_exons_hg38.tsv", sep = "\t")
+    refseq <- fread("ref/refseq_introns_exons_hg38.tsv", sep = "\t")
 
     table <- refseq[gene_name == gene & tx_id %in% tx]
 
@@ -175,7 +175,7 @@ full_gene_figure <- function(gene,tx,sig_introns,strand){
 
     #View(mthfr)
     # SVG graphics device
-    png("full_gene_figure.png", width = 20, height = 3, units="cm", res = 150)
+    png("output/figs/full_gene_figure.png", width = 20, height = 3, units="cm", res = 150)
 
     par(mar =c(1,1,1,1))
     plot.new()
@@ -226,7 +226,7 @@ full_gene_figure <- function(gene,tx,sig_introns,strand){
 
 normalChangeBarPlot <- function(table){
 
-    png("normal_change_barplot.png", width = 6, height = 8, units="cm", res = 150)
+    png("output/figs/normal_change_barplot.png", width = 6, height = 8, units="cm", res = 150)
 
     par(mar=c(5,5,2,2))
     plot.new()
@@ -245,7 +245,7 @@ normalChangeBarPlot <- function(table){
 
 splicingFrameConsequences <- function(table,intron){
 
-    png("splicing_frame_consequences.png", width = 10, height = 6, units="cm", res = 150)
+    png("output/figs/splicing_frame_consequences.png", width = 10, height = 6, units="cm", res = 150)
 
     par(mar=c(3,4,2,1))
 
@@ -286,49 +286,62 @@ splicingFrameConsequences <- function(table,intron){
     dev.off()
 }
 
-
-splicingFrameConsequences <- function(table,intron){
-
-    png("splicing_frame_consequences.png", width = 10, height = 6, units="cm", res = 150)
-
-    par(mar=c(3,4,2,1))
-
-    table_ctrl_sj <<- table[intron_no == intron & annotated != 'canonical' & SJ_IR == "SJ",sum(controlavg), by = frame_conserved]
-    table_ctrl_ns <<- table[intron_no == intron & annotated == 'canonical' & SJ_IR == "SJ",sum(controlavg), by = event]
-    table_ctrl_ir <<- table[intron_no == intron & annotated == 'canonical' & SJ_IR == "IR",sum(controlavg), by = event]
-
-    table_pbd_sj <<- table[intron_no == intron & annotated != 'canonical' & SJ_IR == "SJ",sum(probandpct), by = frame_conserved]
-    table_pbd_ns <<- table[intron_no == intron & annotated == 'canonical' & SJ_IR == "SJ",sum(probandpct), by = event]
-    table_pbd_ir <<- table[intron_no == intron & annotated == 'canonical' & SJ_IR == "IR",sum(probandpct), by = event]
-
-    in_frame <<- data.table(frame_conserved ="in-frame", V1 = formattable::percent(0, digits=1))
-
-    if(nrow(table_ctrl_sj) == 1){
-        table_ctrl_sj <<- rbind(table_ctrl_sj,in_frame)
-    }
-
-    if(nrow(table_pbd_sj) == 1){
-        table_pbd_sj <<- rbind(table_pbd_sj,in_frame)
-    }
-
-    table_frame <<- rbind(table_ctrl_ns ,table_ctrl_sj ,table_ctrl_ir, use.names=F)
-    table_frame <<- cbind(table_frame,rbind(table_pbd_ns[,2], table_pbd_sj[,2], table_pbd_ir[,2]))
-
-    table_frame <<- table_frame[,2:3]
-    table_frame_mat <<- as.matrix(table_frame)
-    names(table_frame_mat) <- c("controlavg","proband")
-    row.names(table_frame_mat) <<- c("normal-splicing","in-frame","out-of-frame","intron-retention")
-
-    barplot(table_frame_mat ~ names(table_frame_mat),
-            col = c("white","red","yellow","black"),
-            las = 2,
-            legend = FALSE, beside = TRUE, space=c(0,1),
-            ylim = c(0, 1))
-
-    mtext("Proportion of Reads at Junction", side = 2, line = 3, cex = 0.8, font = 2)
-    rm(table_frame)
-    dev.off()
-}
+#
+# splicingFrameConsequences <- function(table,intron){
+#
+#     table <- normaltable
+#     intron <- sig_introns[[1]]
+#
+#     png("output/figs/splicing_frame_consequences.png", width = 10, height = 6, units="cm", res = 150)
+#
+#     par(mar=c(3,4,2,1))
+#
+#     table_ctrl_sj <<- table[intron_no == intron & annotated != 'canonical' & SJ_IR == "SJ",sum(controlavg), by = frame_conserved]
+#     table_ctrl_ns <<- table[intron_no == intron & annotated == 'canonical' & SJ_IR == "SJ",sum(controlavg), by = event]
+#     table_ctrl_ir <<- table[intron_no == intron & annotated == 'canonical' & SJ_IR == "IR",sum(controlavg), by = event]
+#
+#     table_pbd_sj <<- table[intron_no == intron & annotated != 'canonical' & SJ_IR == "SJ",sum(probandpct), by = frame_conserved]
+#     table_pbd_ns <<- table[intron_no == intron & annotated == 'canonical' & SJ_IR == "SJ",sum(probandpct), by = event]
+#     table_pbd_ir <<- table[intron_no == intron & annotated == 'canonical' & SJ_IR == "IR",sum(probandpct), by = event]
+#
+#     # for(count in list(table_ctrl_sj,table_ctrl_ns,table_ctrl_ir,table_pbd_sj,table_pbd_ns,table_pbd_ir)){
+#     #     if(nrow(count) == 0){
+#     #         count$event[1] <- "no event"
+#     #         count$V1 <- formattable::percent(0, digits=1)
+#     #     }
+#     #     print(count)
+#     #     print('\n')
+#     # }
+#
+#
+#     in_frame <<- data.table(frame_conserved ="in-frame", V1 = formattable::percent(0, digits=1))
+#
+#     if(nrow(table_ctrl_sj) == 1){
+#         table_ctrl_sj <<- rbind(table_ctrl_sj,in_frame)
+#     }
+#
+#     if(nrow(table_pbd_sj) == 1){
+#         table_pbd_sj <<- rbind(table_pbd_sj,in_frame)
+#     }
+#
+#     table_frame <<- rbind(table_ctrl_ns ,table_ctrl_sj ,table_ctrl_ir, use.names=F)
+#     table_frame <<- cbind(table_frame,rbind(table_pbd_ns[,2], table_pbd_sj[,2], table_pbd_ir[,2]))
+#
+#     table_frame <<- table_frame[,2:3]
+#     table_frame_mat <<- as.matrix(table_frame)
+#     names(table_frame_mat) <- c("controlavg","proband")
+#     row.names(table_frame_mat) <<- c("normal-splicing","in-frame","out-of-frame","intron-retention")[1]
+#
+#     barplot(table_frame_mat ~ names(table_frame_mat),
+#             col = c("white","red","yellow","black"),
+#             las = 2,
+#             legend = FALSE, beside = TRUE, space=c(0,1),
+#             ylim = c(0, 1))
+#
+#     mtext("Proportion of Reads at Junction", side = 2, line = 3, cex = 0.8, font = 2)
+#     rm(table_frame)
+#     dev.off()
+# }
 
 
 

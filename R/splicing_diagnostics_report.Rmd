@@ -1,0 +1,113 @@
+---
+output:
+  rmdformats::html_clean:
+    highlight: kate
+    lightbox: FALSE
+    thumbnails: FALSE
+params:
+    normal: "error"
+    aberrant: "error"
+    testgenes: "error"
+    transcript: "error"
+    sample: "error"
+    control_no: "0"
+    refseq: "error"
+    strand: "error"
+    sds: "error"
+    details: "error"
+
+    
+---
+```{r setup, include=FALSE}
+## Global options
+knitr::opts_chunk$set(cache = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+library("formattable")
+library("data.table")
+
+```
+
+```{r, echo=FALSE}
+#Assign params
+normal <- params$normal
+aberrant <- params$aberrant
+testgenes <- params$testgenes
+transcript <- params$transcript
+sample <- params$sample
+control_no <- params$control_no
+refseq <- params$refseq
+strand <- params$strand
+sds <- params$sds
+details <- params$details
+
+#Load data
+run_details <- fread('details',sep="\t")
+
+#Make other variables
+provider <- run_details$provider
+rnaseq <- run_details$rnaseq
+report_date <- run_details$report
+controls <- run_details$controls
+version <- run_details$version
+no_introns <- length(aberrant)
+
+```
+# CORTAR v0.3.0
+## `r sample`
+Significantly different splicing events (>2SD) compared to `r control_no` controls.
+
+###Details:
+- Provider: `r provider`
+- RNA-seq: `r rnaseq`
+- Controls: `r control_no` `r controls`
+- Report: `r report_date`
+- Version: v`r version`
+
+
+## Overview
+
+In the proband, `r testgenes` (`r transcript`) has pre-mRNA splicing events which are significantly different to controls (>5% change, >2 standard deviations) in **`r no_introns` introns**. All pre-mRNA splicing events >2sd occurring in these introns are highlighted below.
+
+Events marked with an asterisk (*) are unique to the proband and any family members included in the analysis, as compared to controls. These events may be present at very low levels in the population.
+
+
+<center>
+
+![*`r testgenes`* (`r transcript`)](full_gene_figure.png)
+
+</center>
+
+## Disruptions to Normal Splicing
+
+```{r, results='asis'}
+print(knitr::kable(normal))
+cat("\n")
+```
+<center>
+
+![Relative proportions of normal splicing for intron `r names(aberrant)[1]`](normal_change_barplot.png)
+
+</center>
+
+
+## Changes in Aberrant Splicing
+
+<center>
+
+![Changes in relative proportions of normal, in-frame, and out-of-frame events](splicing_frame_consequences.png)
+
+</center>
+
+```{r, results='asis'}
+for(intron in 1:length(aberrant)){
+    cat("## Intron",i)
+    print(knitr::kable(aberrant[[i]]))
+    cat("\n")
+}
+```
+
+### Number of events:
+- Two sd: `r sds[,1]`
+- Three sd: `r sds[,2]`
+- Four sd: `r sds[,3]`
+
