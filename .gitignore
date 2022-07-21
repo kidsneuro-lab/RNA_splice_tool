@@ -1,10 +1,4 @@
 .R*
 temp*
-*.tsv*
-*.txt
-.Rproj.user
-*.gff
-full_gene_figure.png
-.Rsubread_UserProvidedAnnotation_pid*
-hpc/*
-test_html_cache/*
+cortar.Rproj
+ref/refseq_introns_exons_hg*
