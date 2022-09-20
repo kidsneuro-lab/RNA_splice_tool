@@ -286,11 +286,74 @@ splicingFrameConsequences <- function(table,intron){
     dev.off()
 }
 
+
+normalSpliceMap <- function(table, probands, genes){
+
+    # table <- all_splicing_events_sample
+    # probands <- familycols
+    # genes <- testgenes
+
+    #png(paste0("output/figs/",proband,"_normalSpliceMap.png"), width = 10, height = 6, units="cm", res = 150)
+    pdf(paste0("output/figs/",proband,"_normalSpliceMap.pdf"), width = 5, height = 3)
+
+    filtered_table <- as.data.frame(table[SJ_IR == "SJ" & annotated == 'canonical' & gene == genes])
+
+    probpct <- as.vector(filtered_table[,probands])
+
+    myplot1 <- ggplot() +
+        geom_ribbon(aes(ymin = filtered_table$controlavg - filtered_table$controlsd*2,
+                        ymax = filtered_table$controlavg + filtered_table$controlsd*2,
+                        x = filtered_table$intron_no), fill = "grey70", color = "grey70") +
+        #geom_col(aes(x=filtered_table$intron_no, y=abs(filtered_table$difference)/filtered_table$controlavg), fill = "maroon") +
+        #geom_col(aes(x=filtered_table$intron_no, y=abs(filtered_table$difference)), fill = "black") +
+        #geom_line(aes(x=filtered_table$intron_no, y=filtered_table$controlsd*2), color = "black") +
+        geom_point(aes(x=filtered_table$intron_no, y=probpct), color = "red") +
+        geom_point(aes(x=filtered_table$intron_no, y=filtered_table$controlavg), color = "blue") +
+        geom_line(aes(x=filtered_table$intron_no, y=probpct), color = "red") +
+        geom_line(aes(x=filtered_table$intron_no, y=filtered_table$controlavg), color = "blue") +
+        scale_y_continuous(breaks=seq(0,1.0,0.1), limits = c(0,1.0)) +
+        scale_x_continuous(breaks=seq(1,23,1), limits = c(1,23)) +
+        ggtitle(paste0(proband)) + xlab("intron") + ylab("proportion of all splicing") +
+        theme_minimal()
+
+    print(myplot1)
+
+    dev.off()
+
+    #png(paste0("output/figs/",proband,"_normalSpliceMap_bar.png"), width = 10, height = 6, units="cm", res = 150)
+    pdf(paste0("output/figs/",proband,"_normalSpliceMap_bar.pdf"), width = 5, height = 3)
+
+    filtered_table <- as.data.frame(table[SJ_IR == "SJ" & annotated == 'canonical' & gene == genes])
+
+    probpct <- as.vector(filtered_table[,probands])
+
+    myplot1 <- ggplot() +
+        geom_ribbon(aes(ymin = filtered_table$controlsd*-2,
+                        ymax = filtered_table$controlsd*2,
+                        x = filtered_table$intron_no), fill = "grey70", color = "grey70") +
+        geom_col(aes(x=filtered_table$intron_no, y=filtered_table$difference/filtered_table$controlavg), fill = "maroon", width = 0.5) +
+        geom_col(aes(x=filtered_table$intron_no, y=filtered_table$difference), fill = "black", width = 0.5) +
+        #geom_line(aes(x=filtered_table$intron_no, y=filtered_table$controlsd*2), color = "black") +
+        #geom_line(aes(x=filtered_table$intron_no, y=filtered_table$controlsd*-2), color = "black") +
+        geom_hline(aes(yintercept=0.355),linetype=2, color = "grey70") +
+        geom_hline(aes(yintercept=-0.355),linetype=2, color = "grey70") +
+        geom_hline(aes(yintercept=0)) +
+        scale_y_continuous(breaks=seq(-1.0,1.0,0.1), limits = c(-1.0,round(max(filtered_table$difference,filtered_table$controlsd*2),digits=1)+0.05)) +
+        scale_x_continuous(breaks=seq(1,23,1), limits = c(1,23)) +
+        ggtitle(paste0(proband)) + xlab("intron") + ylab("change in normal splicing prop.") +
+        theme_minimal()
+
+    print(myplot1)
+
+    dev.off()
+}
+
+
 #
 # splicingFrameConsequences <- function(table,intron){
 #
-#     table <- normaltable
-#     intron <- sig_introns[[1]]
+    # table <- normaltable
+    # intron <- sig_introns[[1]]
 #
 #     png("output/figs/splicing_frame_consequences.png", width = 10, height = 6, units="cm", res = 150)
 #
