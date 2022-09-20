@@ -1,5 +1,5 @@
 # *************************************************************************** #
-#░▄▀▀░▄▀▄▒█▀▄░▀█▀▒▄▀▄▒█▀▄ v0.4.0                                      Jun 2022
+#░▄▀▀░▄▀▄▒█▀▄░▀█▀▒▄▀▄▒█▀▄ v0.5.0                                      Jun 2022
 #░▀▄▄░▀▄▀░█▀▄░▒█▒░█▀█░█▀▄                        e: rmar4592@uni.sydney.edu.au
 # ___________________________________________________________________________ #
 
@@ -7,15 +7,16 @@
 #--Load Environment------------------------------------------------------------
 
 #Load Parameters
-SampleFile <- "src/AGRF_fibroblasts_dmso_batch_3_samplefile.tsv"
+SampleFile <- "src/AGRF_all_blood_subset_samplefile.tsv"
 Assembly <- list("hg38","UCSC", TRUE, 2) # hg38/hg19 | UCSC/1000genomes | paired? | stranded (0,1,2)
 Export <- "output/"
 
 
-#Load dependencies
+#Load Dependencies
 sapply(c("data.table", "GenomicFeatures", "GenomicAlignments", "formattable",
          "GenomicRanges", "BSgenome.Hsapiens.UCSC.hg38", "openxlsx",
-         "BSgenome.Hsapiens.UCSC.hg19", "BSgenome.Hsapiens.1000genomes.hs37d5"),
+         "BSgenome.Hsapiens.UCSC.hg19", "BSgenome.Hsapiens.1000genomes.hs37d5",
+         "magrittr","ggplot2"),
        require,warn.conflicts=F,
        quietly=T,
        character.only = TRUE)
@@ -30,7 +31,7 @@ Sample_File <- fread(SampleFile, sep ="\t", fill=T)
 
 
 
-#-Select genes and introns of interest-----------------------------------------
+#-Select Genes and Introns of Interest-----------------------------------------
 
 #Select genes of interest and create a GRanges object
 Genes <- Ensembl_Genes[`Gene name` %in% Sample_File$genes]
@@ -135,9 +136,6 @@ for (sample_number in 1:nrow(Sample_File)) {
     strand(sj[[sample_name]]) <- mcols(sj[[sample_name]])[,"intron_strand"]
 }
 
-#BedGRange(ir[["281_MTHFR_P"]], "intron_starts.GRanges")
-#BedGRange(ir[["281_MTHFR_P"]], "intron_ends.GRanges")
-
 
 #--Aggregate and count junctional reads for each sample------------------------
 combined_sj <- unique(unlist(GRangesList(unlist(sj))))
@@ -232,12 +230,9 @@ for (query_intron in seq(1,nrow(Introns))){
 
     #Annotate with event
     query_intron.dt$event <- eventAnnotation(query_intron.dt)
-    #       - Distinguish between intronic and exonic cryptic
-    #       - Assign c./r. numbers for events
 
     #Annotate with frame
     query_intron.dt$frame_conserved <- framed(query_intron.dt)
-    #       - Enable intron frame to be reported
 
     #Append intron analysis to all events by intron
     events_by_intron[[intron_name]] <- query_intron.dt
@@ -248,12 +243,11 @@ for (query_intron in seq(1,nrow(Introns))){
 #Merge all introns into a single data.table
 all_splicing_events <- rbindlist(events_by_intron)
 
-#ViewGRange(events_by_intron["MTHFR intron 7"])
-
 
 #--Compare splicing between test and controls and Generate Report--------------
 for(sample_number in seq(1,nrow(Sample_File))){
-    #Initialise new copy of the all_splicing_events dataset
+
+#Initialise new copy of the all_splicing_events dataset
     all_splicing_events_sample <- all_splicing_events
     if(Sample_File$sampletype[sample_number] == 'test'){
 
@@ -271,7 +265,7 @@ for(sample_number in seq(1,nrow(Sample_File))){
         ctrlscols <- paste0("pct_", ctrls)
         ctrlsreadcols <- paste0("count_", ctrls)
 
-    #Initialise various columns
+#Initialise various columns
     #Proband
         all_splicing_events_sample$proband <- Sample_File$sampleID[sample_number]
 
@@ -348,6 +342,7 @@ for(sample_number in seq(1,nrow(Sample_File))){
         splicing_diagnostics_report <- F
         full_all_genes_report <- F
         testgenes <- unique(Sample_File$genes[sample_number])
+        normalSpliceMap(all_splicing_events_sample, familycols[1], testgenes)
 
     #Generate filtered excel spreadsheet +/- summary html
         #Excel spreadsheet

@@ -2,3 +2,6 @@
 temp*
 cortar.Rproj
 ref/refseq_introns_exons_hg*
+.Rproj.user
+output/*
+src/*
