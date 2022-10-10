@@ -23,9 +23,9 @@ sapply(c("data.table", "GenomicFeatures", "GenomicAlignments", "formattable",
 
 source("R/additional_functions.R")
 
-Refseq_Genes <- fread("ref/refseq_introns_exons_hg38.tsv", sep = "\t")
-Ensembl_Genes <- fread("ref/hg38_mart_export_allgenes_chr1-Y.txt", sep = "\t")
-Mendelian_Intron_PTCs <- fread("ref/mendelian_intron_ptcs.tsv", sep = "\t")
+Refseq_Genes <- fread("data/refseq_introns_exons_hg38.tsv", sep = "\t")
+Ensembl_Genes <- fread("data/hg38_mart_export_allgenes_chr1-Y.txt", sep = "\t")
+Mendelian_Intron_PTCs <- fread("data/mendelian_intron_ptcs.tsv", sep = "\t")
 Genome_Assembly = BSgenome.Hsapiens.UCSC.hg38
 Sample_File <- fread(SampleFile, sep ="\t", fill=T)
 
