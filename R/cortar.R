@@ -25,6 +25,7 @@ source("R/additional_functions.R")
 
 Refseq_Genes <- fread("ref/refseq_introns_exons_hg38.tsv", sep = "\t")
 Ensembl_Genes <- fread("ref/hg38_mart_export_allgenes_chr1-Y.txt", sep = "\t")
+Mendelian_Intron_PTCs <- fread("ref/mendelian_intron_ptcs.tsv", sep = "\t")
 Genome_Assembly = BSgenome.Hsapiens.UCSC.hg38
 Sample_File <- fread(SampleFile, sep ="\t", fill=T)
 
@@ -309,6 +310,26 @@ for(sample_number in seq(1,nrow(Sample_File))){
             }
         }
 
+
+    #Normalisation - 20220923
+        all_splicing_events_sample$norm_proband <-
+            (all_splicing_events_sample[,paste0("pct_", proband),with=F]/
+            ((all_splicing_events_sample[,paste0("pct_", proband),with=F]/
+                all_splicing_events_sample$controlavg)/
+        ((1-all_splicing_events_sample[,paste0("pct_", proband),with=F])/
+                (1-all_splicing_events_sample$controlavg))))*all_splicing_events_sample[,paste0("pct_", proband),with=F]
+
+        all_splicing_events_sample$norm_controlavg <-
+            (all_splicing_events_sample[,paste0("pct_", proband),with=F]/
+            ((all_splicing_events_sample[,paste0("pct_", proband),with=F]/
+                all_splicing_events_sample$controlavg)/
+            ((1-all_splicing_events_sample[,paste0("pct_", proband),with=F])/
+                (1-all_splicing_events_sample$controlavg))))*all_splicing_events_sample$controlavg
+
+        all_splicing_events_sample$norm_difference <-
+            all_splicing_events_sample$norm_proband - all_splicing_events_sample$norm_controlavg
+
+
     #Order columns and sort by the greatest difference
         all_splicing_events_sample <- all_splicing_events_sample[order(
             abs(all_splicing_events_sample$difference), decreasing = T),
@@ -335,7 +356,10 @@ for(sample_number in seq(1,nrow(Sample_File))){
               "three_sd",
               "four_sd",
               "intron_no",
-              "SJ_IR"),with=F]
+              "SJ_IR",
+              "norm_difference",
+              "norm_proband",
+              "norm_controlavg"),with=F]
 
     #Set report outputs and parameters
         report <- T
@@ -343,6 +367,7 @@ for(sample_number in seq(1,nrow(Sample_File))){
         full_all_genes_report <- F
         testgenes <- unique(Sample_File$genes[sample_number])
         normalSpliceMap(all_splicing_events_sample, familycols[1], testgenes)
+        #normalSpliceMap(all_splicing_events_sample, "norm_proband", testgenes)
 
     #Generate filtered excel spreadsheet +/- summary html
         #Excel spreadsheet

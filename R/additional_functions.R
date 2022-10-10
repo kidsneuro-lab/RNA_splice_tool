@@ -90,6 +90,34 @@ framed <- function(intron.dt){
                 frame[event] <- NA
             }
 
+        }else if(query_intron.dt$SJ_IR[event] == "IR"){
+            frame[event] <- ""
+            boundaries <<- c(query_intron.dt$start[event],query_intron.dt$end[event])
+            for(gpos in seq(1,2)){
+                #Find gene, canonical transcript, and overlapping regions
+                mendelian_introns_gene <<- Mendelian_Intron_PTCs[gene == query_intron.dt$gene[event]]
+                #Find gene, canonical transcript, overlapping region and strand
+                for(regions in 1:nrow(Mendelian_Intron_PTCs)){
+                    if(between(boundaries[gpos],
+                               mendelian_introns_gene$region_start[regions],
+                               mendelian_introns_gene$region_end[regions])){
+                        print(regions)
+                        frame[event] <- mendelian_introns_gene$frame[regions]
+                        if(is.na(frame[event])){
+                            frame[event] <- ""
+                            break
+                        }else if(frame[event] == TRUE){
+                            if(sum(mendelian_introns_gene[regions,c(window1ptc,window2ptc,window3ptc)]) == Inf){
+                                frame[event] <- FALSE
+                                break
+                            }else{
+                                frame[event] <- ""
+                                break
+                            }
+                        }
+                    }
+                }
+            }
         }else{
             frame[event] <- ""
         }
@@ -311,8 +339,8 @@ normalSpliceMap <- function(table, probands, genes){
         geom_point(aes(x=filtered_table$intron_no, y=filtered_table$controlavg), color = "blue") +
         geom_line(aes(x=filtered_table$intron_no, y=probpct), color = "red") +
         geom_line(aes(x=filtered_table$intron_no, y=filtered_table$controlavg), color = "blue") +
-        scale_y_continuous(breaks=seq(0,1.0,0.1), limits = c(0,1.0)) +
-        scale_x_continuous(breaks=seq(1,23,1), limits = c(1,23)) +
+        scale_y_continuous(breaks=seq(0,1.0,0.1), limits = c(-0.5,1.5)) +
+        #scale_x_continuous(breaks=seq(1,23,1), limits = c(1,23)) +
         ggtitle(paste0(proband)) + xlab("intron") + ylab("proportion of all splicing") +
         theme_minimal()
 
@@ -335,11 +363,10 @@ normalSpliceMap <- function(table, probands, genes){
         geom_col(aes(x=filtered_table$intron_no, y=filtered_table$difference), fill = "black", width = 0.5) +
         #geom_line(aes(x=filtered_table$intron_no, y=filtered_table$controlsd*2), color = "black") +
         #geom_line(aes(x=filtered_table$intron_no, y=filtered_table$controlsd*-2), color = "black") +
-        geom_hline(aes(yintercept=0.355),linetype=2, color = "grey70") +
-        geom_hline(aes(yintercept=-0.355),linetype=2, color = "grey70") +
+        geom_hline(aes(yintercept=0.5),linetype=2, color = "grey70") +
         geom_hline(aes(yintercept=0)) +
-        scale_y_continuous(breaks=seq(-1.0,1.0,0.1), limits = c(-1.0,round(max(filtered_table$difference,filtered_table$controlsd*2),digits=1)+0.05)) +
-        scale_x_continuous(breaks=seq(1,23,1), limits = c(1,23)) +
+        scale_y_continuous(breaks=seq(-1.0,1.0,0.1), limits = c(-1.5,round(max(filtered_table$difference,filtered_table$difference/filtered_table$controlavg,filtered_table$controlsd*2),digits=1)+0.05)) +
+        #scale_x_continuous(breaks=seq(1,23,1), limits = c(1,23)) +
         ggtitle(paste0(proband)) + xlab("intron") + ylab("change in normal splicing prop.") +
         theme_minimal()
 
