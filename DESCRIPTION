@@ -1,10 +1,13 @@
 Package: cortar
-Title: Single gene characterisation of splice-junctions from RNA-seq
+Title: cortar: Single gene analysis of splice-junctions from RNA-seq
 Version: 0.6.0
 Authors@R: 
     person("Rhett", "Marchant", , "rmar4592@uni.sydney.edu.au", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4817-9022"))
-Description: Cortar extracts reads at the exon-intron junction from RNA-seq and reports the proportion of splicing events across each intron. By comparing these values to controls, deviations from normal splicing can be characterised in test samples.
+Description: Cortar extracts reads at the exon-intron junction from RNA-seq
+    and reports the proportion of splicing events across each intron. By
+    comparing these values to controls, deviations from normal splicing can
+    be characterised in test samples.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -12,5 +15,10 @@ RoxygenNote: 7.2.1
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+Depends:
+    data.table,
+    R (>= 2.10),
+    ggplot2
 Imports: 
     data.table
+LazyData: true

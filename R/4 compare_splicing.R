@@ -1,0 +1,159 @@
+#' Split a string
+#'
+#' @param string A character vector with, at most, one element.
+#' @inheritParams stringr::str_split
+#'
+#' @return A character vector.
+#' @export
+#'
+#' @examples
+#' x <- "alfa,bravo,charlie,delta"
+#' str_split_one(x, pattern = ",")
+#' str_split_one(x, pattern = ",", n = 2)
+#'
+#' y <- "192.168.0.1"
+#' str_split_one(y, pattern = stringr::fixed("."))
+#'
+# INPUT = Vector of gene names and/or transcripts
+# OUTPUT = Subsetted Refseq table and GRanges object
+#'
+
+compareSplicing <- function(all_splicing_events, Sample_File) {
+    message("Comparing samples...")
+    comparisons <- list()
+  #--Compare splicing between test and controls and Generate Report--------------
+  for (sample_number in seq(1, nrow(Sample_File))) {
+
+    # Initialise new copy of the all_splicing_events dataset
+    all_splicing_events_sample <- all_splicing_events
+    if (Sample_File$sampletype[sample_number] == "test") {
+      # Identify columns for the proband and family members
+      proband <- Sample_File$sampleID[sample_number]
+      family <- Sample_File$sampleID[which(
+        Sample_File$family == Sample_File$family[sample_number]
+      )]
+      message("\t", family)
+      familycols <- paste0("pct_", family)
+      familyreadcols <- paste0("count_", family)
+
+      # Identify columns for the controls
+      ctrls <- Sample_File$sampleID[which(
+        Sample_File$family != Sample_File$family[sample_number]
+      )]
+      ctrlscols <- paste0("pct_", ctrls)
+      ctrlsreadcols <- paste0("count_", ctrls)
+
+      # Initialise various columns
+      # Proband
+      all_splicing_events_sample$proband <- Sample_File$sampleID[sample_number]
+
+      # Control average pct, read count, sd, and n
+      all_splicing_events_sample$controlavg <- rowMeans(
+        all_splicing_events_sample[, ..ctrlscols]
+      )
+      all_splicing_events_sample$controlavgreads <- rowMeans(
+        all_splicing_events_sample[, ..ctrlsreadcols]
+      )
+      all_splicing_events_sample <- cbind(all_splicing_events_sample,
+        controlsd = apply(all_splicing_events_sample[, ..ctrlscols], 1, sd)
+      )
+      all_splicing_events_sample$controln <- length(ctrlscols)
+
+      # Difference between proband and control average
+      all_splicing_events_sample$difference <- all_splicing_events_sample[, paste0("pct_", proband), with = F] -
+        all_splicing_events_sample$controlavg
+
+      # Compute the standard deviation thresholds
+      all_splicing_events_sample$two_sd <- abs(
+        all_splicing_events_sample$difference
+      ) > all_splicing_events_sample$controlsd * 2
+      all_splicing_events_sample$three_sd <- abs(
+        all_splicing_events_sample$difference
+      ) > all_splicing_events_sample$controlsd * 3
+      all_splicing_events_sample$four_sd <- abs(
+        all_splicing_events_sample$difference
+      ) >
+        all_splicing_events_sample$controlsd * 4
+
+
+      # Identify unique events
+      for (i in seq(1, nrow(all_splicing_events_sample))) {
+        event_unique_count <- 0
+        for (member in familycols) {
+          if (all_splicing_events_sample$controlavg[i] == 0 &
+            all_splicing_events_sample[, ..member][i] != 0) {
+            event_unique_count <- event_unique_count + 1
+          }
+        }
+        if (event_unique_count >= 1) {
+          all_splicing_events_sample$unique[i] <- paste(
+            event_unique_count, "/", length(familycols),
+            sep = ""
+          )
+        } else {
+          all_splicing_events_sample$unique[i] <- ""
+        }
+      }
+
+
+      # Normalisation - 20220923
+      all_splicing_events_sample$norm_proband <-
+        (all_splicing_events_sample[, paste0("pct_", proband), with = F] /
+          ((all_splicing_events_sample[, paste0("pct_", proband), with = F] /
+            all_splicing_events_sample$controlavg) /
+            ((1 - all_splicing_events_sample[, paste0("pct_", proband), with = F]) /
+              (1 - all_splicing_events_sample$controlavg)))) * all_splicing_events_sample[, paste0("pct_", proband), with = F]
+
+      all_splicing_events_sample$norm_controlavg <-
+        (all_splicing_events_sample[, paste0("pct_", proband), with = F] /
+          ((all_splicing_events_sample[, paste0("pct_", proband), with = F] /
+            all_splicing_events_sample$controlavg) /
+            ((1 - all_splicing_events_sample[, paste0("pct_", proband), with = F]) /
+              (1 - all_splicing_events_sample$controlavg)))) * all_splicing_events_sample$controlavg
+
+      all_splicing_events_sample$norm_difference <-
+        all_splicing_events_sample$norm_proband - all_splicing_events_sample$norm_controlavg
+
+
+      # Order columns and sort by the greatest difference
+      all_splicing_events_sample <- all_splicing_events_sample[order(
+        abs(all_splicing_events_sample$difference),
+        decreasing = T
+      ),
+      c(
+        "assembly",
+        "proband",
+        "seqnames",
+        "start",
+        "end",
+        "width",
+        "strand",
+        "gene",
+        "event",
+        "annotated",
+        "frame_conserved",
+        "unique",
+        "difference",
+        familycols,
+        "controlavg",
+        "controlsd",
+        "controln",
+        familyreadcols,
+        "controlavgreads",
+        "two_sd",
+        "three_sd",
+        "four_sd",
+        "intron_no",
+        "SJ_IR",
+        "norm_difference",
+        "norm_proband",
+        "norm_controlavg"
+      ),
+      with = F
+      ]
+      comparisons[[sample_number]] <- all_splicing_events_sample
+    }
+  }
+  message("")
+  return(comparisons)
+}
