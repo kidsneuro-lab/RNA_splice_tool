@@ -1,26 +1,46 @@
-#' Split a string
+#' Extract and count split-reads from .bam files
 #'
-#' @param string A character vector with, at most, one element.
-#' @inheritParams stringr::str_split
+#' `selectGenesTranscripts` extracts split-reads from control and test .bam
+#' files, counts them and aggregates the data into a single data table.
 #'
-#' @return A character vector.
+#' @param genes.GRanges A GRanges object containing the coordinates of the
+#'     genes of interest. Created by `selectGenesTranscripts()`
+#' @param introns.GRanges A GRanges object containing the coordinates of the
+#'     introns of the genes of interest. Created by `selectGenesTranscripts()`
+#' @param intron_starts.GRanges A GRanges object containing the coordinates
+#'     of the upstream exon-intron junctions of the genes of interest.
+#'     Created by `selectGenesTranscripts()`
+#' @param intron_ends.GRanges A GRanges object containing the coordinates
+#'     of the downstream exon-intron junctions of the genes of interest.
+#'     Created by `selectGenesTranscripts()`
+#' @param bamfiles A character vector of file paths, pointing to the .bam files
+#'     for analysis. Included in a properly formatted cortar samplefile.
+#' @param sample_names A character vector of sample names. Included in a
+#'     properly formatted cortar samplefile.
+#' @param assembly Assembly used for alignment: either `"hg38"` or `"hg19"`
+#' @param annotation  Annotation used for alignment: either `"UCSC"` or
+#'     `"1000genomes"`
+#' @param paired Is the RNA-seq paired-end?: `TRUE`/`FALSE`
+#' @param stranded Strandedness of the RNA-seq: `0` for unstranded, `1`
+#'     for forward stranded or `2` for reverse stranded
+#'
+#'
+#' @returns A GRanges object consisting of aggregated junctional read count data
+#' from all control and test samples. The GRanges object has at least three
+#' metadata columns:
+#' * SJ_IR: whether the entry is counting split (SJ) or non-split (IR) reads at
+#' the junction.
+#' * gene: the name of the gene which the junction occurs within or `NA` if the
+#' junction is not with a gene
+#' *count_sample_name: the count for each junction for a given sample. There
+#' will be as many count_sample_name metadata columns as there are
+#' sample_names specified
 #' @export
 #'
 #' @examples
-#' x <- "alfa,bravo,charlie,delta"
-#' str_split_one(x, pattern = ",")
-#' str_split_one(x, pattern = ",", n = 2)
+#' #### == COMING SOON == ####
 #'
-#' y <- "192.168.0.1"
-#' str_split_one(y, pattern = stringr::fixed("."))
-#'
-# INPUT = Vector of gene names and/or transcripts
-# OUTPUT = Subsetted Refseq table and GRanges object
-#'
-#'
-#'
-#--Extract all junctions and intron retention (non-split >4bp intron/>4bp exon) reads----
-#'
+
 extractCountReads <- function(genes.GRanges,
                               introns.GRanges,
                               intron_starts.GRanges,
@@ -128,6 +148,7 @@ extractCountReads <- function(genes.GRanges,
       GenomicRanges::mcols(ir[[sample_name]][S4Vectors::queryHits(qryhits)])[, "ir"]
   }
   combined_sj <- c(combined_sj, combined_ir)
+  GenomicRanges::mcols(combined_sj)[c("ir_s", "ir_e")] <- NULL
   message("")
   return(combined_sj)
 }

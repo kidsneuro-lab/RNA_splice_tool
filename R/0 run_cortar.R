@@ -1,28 +1,33 @@
-#' Split a string
+#' Run cortar
 #'
-#' @param string A character vector with, at most, one element.
-#' @inheritParams stringr::str_split
+#' `cortar()` runs the entire cortar pipeline with specified parameters,
+#' and returns excel & pdf reports.
 #'
-#' @return A character vector.
+#' @param file A file path, pointing to the cortar samplefile.
+#' @param assembly Assembly used for alignment: either `"hg38"` or `"hg19"`
+#' @param annotation  Annotation used for alignment: either `"UCSC"` or
+#'     `"1000genomes"`
+#' @param paired Is the RNA-seq paired-end?: `TRUE`/`FALSE`
+#' @param stranded Strandedness of the RNA-seq: `0` for unstranded, `1`
+#'     for forward stranded or `2` for reverse stranded
+#' @param subset Does the RNA-Seq need to be subsetted to the genes
+#'     of interest? (Optional, but improves speed of subsequent runs.)
+#'     `TRUE`/`FALSE`
+#' @param output_dir A directory path, pointing to the desired location for
+#'     export of cortar results (e.g. `"output/"`)
+#'
 #' @export
 #'
 #' @examples
-#' x <- "alfa,bravo,charlie,delta"
-#' str_split_one(x, pattern = ",")
-#' str_split_one(x, pattern = ",", n = 2)
+#' #### == COMING SOON == ####
 #'
-#' y <- "192.168.0.1"
-#' str_split_one(y, pattern = stringr::fixed("."))
-#'
-# INPUT = Vector of gene names and/or transcripts
-# OUTPUT = Subsetted Refseq table and GRanges object
-#'
+
 cortar <- function(file,
                    assembly,
                    annotation,
                    paired,
                    stranded,
-                   subset = F,
+                   subset = FALSE,
                    output_dir = "~") {
   message(paste0("Running cortar "))
   message(paste0("        file: ", file))
