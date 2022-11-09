@@ -6,18 +6,26 @@
 \usage{
 cortar(
   file,
-  assembly,
-  annotation,
-  paired,
-  stranded,
+  mode = "default",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
   subset = FALSE,
-  output_dir = "~"
+  output_dir = "output/test",
+  genelist = NULL,
+  testsamples = NULL
 )
 }
 \arguments{
-\item{file}{A file path, pointing to the cortar samplefile.}
+\item{file}{A file path, pointing to the cortar samplefile - see readme for
+more information}
 
-\item{assembly}{Assembly used for alignment: either \code{"hg38"} or \code{"hg19"}}
+\item{mode}{One of \code{"default"} (default),\code{"panel"}, or \code{"research"} - see
+readme for more information}
+
+\item{assembly}{Assembly used for alignment: either \code{"hg38"} (default) or
+\code{"hg19"}}
 
 \item{annotation}{Annotation used for alignment: either \code{"UCSC"} or
 \code{"1000genomes"}}
@@ -28,11 +36,17 @@ cortar(
 for forward stranded or \code{2} for reverse stranded}
 
 \item{subset}{Does the RNA-Seq need to be subsetted to the genes
-of interest? (Optional, but improves speed of subsequent runs.)
-\code{TRUE}/\code{FALSE}}
+of interest? \code{TRUE}/\code{FALSE} (Optional, but improves speed of subsequent
+runs.)}
 
 \item{output_dir}{A directory path, pointing to the desired location for
 export of cortar results (e.g. \code{"output/"})}
+
+\item{genelist}{A character vector with genes/RefSeq transcripts of interest
+(Only for panel or research modes; default = NULL)}
+
+\item{testsamples}{A character vector with sampleIDs of test samples for
+gene panel testing (Only for panel mode; default = NULL)}
 }
 \description{
 \code{cortar()} runs the entire cortar pipeline with specified parameters,
