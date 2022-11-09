@@ -1,32 +1,13 @@
-#' Split a string
-#'
-#' @param string A character vector with, at most, one element.
-#' @inheritParams stringr::str_split
-#'
-#' @return A character vector.
-#' @export
-#'
-#' @examples
-#' x <- "alfa,bravo,charlie,delta"
-#' str_split_one(x, pattern = ",")
-#' str_split_one(x, pattern = ",", n = 2)
-#'
-#' y <- "192.168.0.1"
-#' str_split_one(y, pattern = stringr::fixed("."))
-#'
-# INPUT = Vector of gene names and/or transcripts
-# OUTPUT = Subsetted Refseq table and GRanges object
-#'
-
-compareSplicing <- function(all_splicing_events, Sample_File) {
+compareSplicing <- function(all_splicing_events, Sample_File, mode) {
     message("Comparing samples...")
     comparisons <- list()
+
+if(mode == "default" | mode == "panel"){
   #--Compare splicing between test and controls and Generate Report--------------
   for (sample_number in seq(1, nrow(Sample_File))) {
-
     # Initialise new copy of the all_splicing_events dataset
     all_splicing_events_sample <- all_splicing_events
-    if (Sample_File$sampletype[sample_number] == "test") {
+    if (Sample_File$sampletype[sample_number] == "test"){
       # Identify columns for the proband and family members
       proband <- Sample_File$sampleID[sample_number]
       family <- Sample_File$sampleID[which(
@@ -47,6 +28,7 @@ compareSplicing <- function(all_splicing_events, Sample_File) {
       # Proband
       all_splicing_events_sample$proband <- Sample_File$sampleID[sample_number]
 
+    }
       # Control average pct, read count, sd, and n
       all_splicing_events_sample$controlavg <- rowMeans(
         all_splicing_events_sample[, ..ctrlscols]
@@ -75,7 +57,6 @@ compareSplicing <- function(all_splicing_events, Sample_File) {
       ) >
         all_splicing_events_sample$controlsd * 4
 
-
       # Identify unique events
       for (i in seq(1, nrow(all_splicing_events_sample))) {
         event_unique_count <- 0
@@ -94,7 +75,6 @@ compareSplicing <- function(all_splicing_events, Sample_File) {
           all_splicing_events_sample$unique[i] <- ""
         }
       }
-
 
       # Normalisation - 20220923
       all_splicing_events_sample$norm_proband <-
@@ -153,7 +133,58 @@ compareSplicing <- function(all_splicing_events, Sample_File) {
       ]
       comparisons[[sample_number]] <- all_splicing_events_sample
     }
+  }else if(mode == "research"){
+      all_splicing_events_sample <- all_splicing_events
+      ctrls <- Sample_File$sampleID
+      ctrlscols <- paste0("pct_", ctrls)
+      ctrlsreadcols <- paste0("count_", ctrls)
+
+      # Control average pct, read count, sd, and n
+      all_splicing_events_sample$controlavg <- rowMeans(
+        all_splicing_events_sample[, ..ctrlscols]
+      )
+      all_splicing_events_sample$controlavgreads <- rowMeans(
+        all_splicing_events_sample[, ..ctrlsreadcols]
+      )
+      all_splicing_events_sample <- cbind(all_splicing_events_sample,
+                                          controlsd = apply(all_splicing_events_sample[, ..ctrlscols], 1, sd)
+      )
+      all_splicing_events_sample$controln <- length(ctrlscols)
+
+    all_splicing_events_sample <- all_splicing_events_sample[order(
+      gene,controlavg,
+      decreasing = F
+    ),
+    c(
+      "assembly",
+      "seqnames",
+      "start",
+      "end",
+      "width",
+      "strand",
+      "gene",
+      "event",
+      "annotated",
+      "frame_conserved",
+      "controlavg",
+      "controlsd",
+      "controln",
+      "controlavgreads",
+      "intron_no",
+      "SJ_IR"
+    ),
+    with = F
+    ]
+    comparisons <- all_splicing_events_sample
   }
   message("")
   return(comparisons)
 }
+
+# }if(mode == "research"){
+#   message("research")
+#   all_splicing_events_sample <- all_splicing_events
+#   ctrls <- Sample_File$sampleID
+#   ctrlscols <- paste0("pct_", ctrls)
+#   ctrlsreadcols <- paste0("count_", ctrls)
+# }
