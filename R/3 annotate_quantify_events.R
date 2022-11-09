@@ -1,23 +1,3 @@
-#' Split a string
-#'
-#' @param string A character vector with, at most, one element.
-#' @inheritParams stringr::str_split
-#'
-#' @return A character vector.
-#' @export
-#'
-#' @examples
-#' x <- "alfa,bravo,charlie,delta"
-#' str_split_one(x, pattern = ",")
-#' str_split_one(x, pattern = ",", n = 2)
-#'
-#' y <- "192.168.0.1"
-#' str_split_one(y, pattern = stringr::fixed("."))
-#'
-# INPUT = Vector of gene names and/or transcripts
-# OUTPUT = Subsetted Refseq table and GRanges object
-#'
-
 annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_other_tx.GRanges, introns, assembly) {
 
     message("Annotating and quantifying events...")
@@ -30,7 +10,6 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
   # Extract and Annotate All Events at Canonical Junctions
   for(query_intron in seq(1, nrow(introns))) {
     intron_name <- paste0(introns$gene_name[query_intron], " intron ", introns$region_no[query_intron])
-    # message(paste0("\t", intron_name))
 
     # For all samples extract all the reads which overlap the query intron jxns
     qryhits_start <- GenomicRanges::findOverlaps(introns.GRanges[query_intron], combined_sj_sorted, type = "start")
@@ -70,7 +49,7 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
 
     # Convert intron GRange into data.table
     query_intron.dt <- data.table::as.data.table(query_intron.GRanges)
-    query_intron.dt <- unique(query_intron.dt)
+    query_intron.dt <<- unique(query_intron.dt)
 
     # Calculate the proportion of splicing at the intron each event represents
     for (sample_name in ids) {
@@ -92,8 +71,7 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
     query_intron.dt$event <- eventAnnotation(query_intron.dt)
 
     # Annotate with frame
-    query_intron.dt$frame_conserved <- ""
-    # query_intron.dt$frame_conserved <- framed(query_intron.dt, assembly)
+    query_intron.dt$frame_conserved <- framed(query_intron.dt, assembly)
 
     # Append intron analysis to all events by intron
     events_by_intron[[intron_name]] <- query_intron.dt
@@ -163,20 +141,16 @@ eventAnnotation <- function(query_intron.dt){
     return(events)
 }
 
-#Calculate event frame
+#Calculate event frame - this could be pre-computed for annotated
 framed <- function(query_intron.dt, assembly){
 
     if (assembly == "hg38") {
-        rfsq <- refseq_introns_exons_hg38
+        rfsq <<- refseq_introns_exons_hg38
     } else if (assembly == "hg19") {
-        rfsq <- refseq_introns_exons_hg19.tsv
+        rfsq <- refseq_introns_exons_hg19
     }
-    Mendelian_Intron_PTCs <- mendelian_intron_ptcs_hg38
 
     frame <- c()
-
-
-
     for(event in seq(1,nrow(query_intron.dt))){
         if(query_intron.dt$SJ_IR[event] == "SJ"){
             #is the start/end annotated
@@ -184,7 +158,7 @@ framed <- function(query_intron.dt, assembly){
             if(query_intron.dt$start[event] %in% rfsq$region_start & query_intron.dt$end[event] %in% rfsq$region_end){
                 pairstart <- unique(rfsq$region_start[which(rfsq$region_end == query_intron.dt$end[event])])
                 pairend <- unique(rfsq$region_end[which(rfsq$region_start == query_intron.dt$start[event])])
-                if(query_intron.dt$end[event] == pairend){
+                if(query_intron.dt$end[event] %in% pairend){
                     frame[event] <- TRUE
                 }else{
                     dist2authentic <- abs(query_intron.dt$end[event]-pairend)
@@ -208,37 +182,41 @@ framed <- function(query_intron.dt, assembly){
                 frame[event] <- NA
             }
 
-        # }else if(query_intron.dt$SJ_IR[event] == "IR"){
-        #     frame[event] <- ""
-        #     boundaries <<- c(query_intron.dt$start[event],query_intron.dt$end[event])
-        #     for(gpos in seq(1,2)){
-        #         #Find gene, canonical transcript, and overlapping regions
-        #         mendelian_introns_gene <<- Mendelian_Intron_PTCs[gene == query_intron.dt$gene[event]]
-        #         #Find gene, canonical transcript, overlapping region and strand
-        #         for(regions in 1:nrow(Mendelian_Intron_PTCs)){
-        #             if(between(boundaries[gpos],
-        #                        mendelian_introns_gene$region_start[regions],
-        #                        mendelian_introns_gene$region_end[regions])){
-        #                 print(regions)
-        #                 frame[event] <- mendelian_introns_gene$frame[regions]
-        #                 if(is.na(frame[event])){
-        #                     frame[event] <- ""
-        #                     break
-        #                 }else if(frame[event] == TRUE){
-        #                     if(sum(mendelian_introns_gene[regions,c(window1ptc,window2ptc,window3ptc)]) == Inf){
-        #                         frame[event] <- FALSE
-        #                         break
-        #                     }else{
-        #                         frame[event] <- ""
-        #                         break
-        #                     }
-        #                 }
-        #             }
-        #         }
-        #     }
+        }else if(query_intron.dt$SJ_IR[event] == "IR"){
+            frame[event] <- ""
+            # boundaries <- c(query_intron.dt$start[event],query_intron.dt$end[event])
+            # message(boundaries)
+            # for(gpos in seq(1,2)){
+            #     #Find gene, canonical transcript, and overlapping regions
+            #     mendelian_introns_gene <- Mendelian_Intron_PTCs[gene == query_intron.dt$gene[event]]
+            #     #Find gene, canonical transcript, overlapping region and strand
+            #     for(regions in 1:nrow(Mendelian_Intron_PTCs)){
+            #         message(regions)
+            #         if(between(boundaries[gpos],
+            #                    mendelian_introns_gene$region_start[regions],
+            #                    mendelian_introns_gene$region_end[regions])){
+            #             print(regions)
+            #             frame[event] <- mendelian_introns_gene$frame[regions]
+            #             if(is.na(frame[event])){
+            #                 frame[event] <- ""
+            #                 break
+            #             }else if(frame[event] == TRUE){
+            #                 if(sum(mendelian_introns_gene[regions,c(window1ptc,window2ptc,window3ptc)]) == Inf){
+            #                     frame[event] <- FALSE
+            #                     break
+            #                 }else{
+            #                     frame[event] <- ""
+            #                     break
+            #                 }
+            #             }
+            #         }
+            #     }
+            # }
         }else{
             frame[event] <- ""
         }
     }
     return(frame)
 }
+
+
