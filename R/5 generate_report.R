@@ -42,7 +42,7 @@ generateReport <- function(comparisons, Sample_File, Export, mode) {
           )
         }
         if (report == FALSE) {
-          data.table::fwrite(all_splicing_events_sample, # [which(combined_dt_intron_test$genes == testgenes)],
+          data.table::fwrite(all_splicing_events_sample,
             file = paste0(
               Export, "/", Sample_File$sampleID[sample_number], "_", testgenes, "_combined_full",
               ".tsv"
@@ -56,9 +56,14 @@ generateReport <- function(comparisons, Sample_File, Export, mode) {
     testgenes <- unique(all_splicing_events_sample$gene)
     proband <- "splicing_analysis"
     for(gene in testgenes){
-      normalSpliceMap(all_splicing_events_sample, familycols[1], proband, gene, export = Export, mode = mode)
+      normalSpliceMap(all_splicing_events_sample,
+                      familycols[1],
+                      proband,
+                      gene,
+                      export = Export,
+                      mode = mode)
     }
-    data.table::fwrite(all_splicing_events_sample, # [which(combined_dt_intron_test$genes == testgenes)],
+    data.table::fwrite(all_splicing_events_sample,
                        file = paste0(
                          Export, "/", "splicing_analysis","_combined_full",
                          ".tsv"
@@ -69,12 +74,7 @@ generateReport <- function(comparisons, Sample_File, Export, mode) {
 
 normalSpliceMap <- function(table, familycols, proband, genes, export, mode){
 
-    # table <- all_splicing_events_sample
-    # probands <- familycols
-    # genes <- testgenes
-
-    #png(paste0("output/figs/",proband,"_normalSpliceMap.png"), width = 10, height = 6, units="cm", res = 150)
-    pdf(paste0(export,"/", proband,"_",genes,"_normalSpliceMap.pdf"), width = 5, height = 3)
+  pdf(paste0(export,"/", proband,"_",genes,"_normalSpliceMap.pdf"), width = 5, height = 3)
 
     filtered_table <- as.data.table(table[SJ_IR == "SJ" & annotated == 'canonical' & gene == genes])
 
@@ -91,15 +91,11 @@ normalSpliceMap <- function(table, familycols, proband, genes, export, mode){
         geom_ribbon(aes(ymin = filtered_table$controlavg - filtered_table$controlsd*2,
                         ymax = filtered_table$controlavg + filtered_table$controlsd*2,
                         x = filtered_table$intron_no), fill = "grey70", color = "grey70") +
-        #geom_col(aes(x=filtered_table$intron_no, y=abs(filtered_table$difference)/filtered_table$controlavg), fill = "maroon") +
-        #geom_col(aes(x=filtered_table$intron_no, y=abs(filtered_table$difference)), fill = "black") +
-        #geom_line(aes(x=filtered_table$intron_no, y=filtered_table$controlsd*2), color = "black") +
         geom_point(aes(x=filtered_table$intron_no, y=probpct), color = probcolour) +
         geom_point(aes(x=filtered_table$intron_no, y=filtered_table$controlavg), color = "blue") +
         geom_line(aes(x=filtered_table$intron_no, y=probpct), color = probcolour) +
         geom_line(aes(x=filtered_table$intron_no, y=filtered_table$controlavg), color = "blue") +
         scale_y_continuous(breaks=seq(0,1.0,0.1), limits = c(-0.5,1.5)) +
-        #scale_x_continuous(breaks=seq(1,23,1), limits = c(1,23)) +
         ggtitle(paste0(proband,"_",genes)) + xlab("intron") + ylab("proportion of all splicing") +
         theme_minimal()
 
@@ -107,12 +103,7 @@ normalSpliceMap <- function(table, familycols, proband, genes, export, mode){
 
     dev.off()
 
-    #png(paste0("output/figs/",proband,"_normalSpliceMap_bar.png"), width = 10, height = 6, units="cm", res = 150)
     pdf(paste0(export,"/",proband,"_",genes,"_normalSpliceMap_bar.pdf"), width = 5, height = 3)
-
-    # filtered_table <- as.data.table(table[SJ_IR == "SJ" & annotated == 'canonical' & gene == genes])
-    #
-    # probpct <- as.vector(filtered_table[, ..familycols])
 
     myplot1 <- ggplot() +
         geom_ribbon(aes(ymin = filtered_table$controlsd*-2,
@@ -120,12 +111,9 @@ normalSpliceMap <- function(table, familycols, proband, genes, export, mode){
                         x = filtered_table$intron_no), fill = "grey70", color = "grey70") +
         geom_col(aes(x=filtered_table$intron_no, y=filtered_table$difference/filtered_table$controlavg), fill = "maroon", width = 0.5) +
         geom_col(aes(x=filtered_table$intron_no, y=filtered_table$difference), fill = "black", width = 0.5) +
-        #geom_line(aes(x=filtered_table$intron_no, y=filtered_table$controlsd*2), color = "black") +
-        #geom_line(aes(x=filtered_table$intron_no, y=filtered_table$controlsd*-2), color = "black") +
         geom_hline(aes(yintercept=0.5),linetype=2, color = "grey70") +
         geom_hline(aes(yintercept=0)) +
         scale_y_continuous(breaks=seq(-1.0,1.0,0.1), limits = c(-1.5,round(max(filtered_table$difference,filtered_table$difference/filtered_table$controlavg,filtered_table$controlsd*2),digits=1)+0.05)) +
-        #scale_x_continuous(breaks=seq(1,23,1), limits = c(1,23)) +
         ggtitle(paste0(proband,"_",genes)) + xlab("intron") + ylab("change in normal splicing prop.") +
         theme_minimal()
 
@@ -162,11 +150,6 @@ generate.excel <- function(data, familymembers, gene, export, sample){
     openxlsx::addStyle(wb, sht, twodp, cols = 22, rows = 2:(nrow(data)+1),
              gridExpand = TRUE)
 
-    # Set column widths for event and proband - Currently not working 20211013
-    #width_vec <- apply(data, 2, function(x) max(nchar(as.character(x)) + 2,
-    #na.rm = TRUE))
-    #setColWidths(wb, sht, cols = c(9,12), widths = width_vec[c(9,12)])
-
     # Add conditionalFormatting to difference and percentage columns
     openxlsx::conditionalFormatting(wb, sht, cols=c(14:(16+familymembers-1)),
                           rows = 2:(nrow(data)+1),
@@ -183,96 +166,3 @@ generate.excel <- function(data, familymembers, gene, export, sample){
                  overwrite = T)
 
 }
-
-
-
-#
-# #--HTML summary report---- You are up to here! Nearly done! -----------
-# if (splicing_diagnostics_report == TRUE) {
-#   report_table <- all_splicing_events_sample
-#
-#   names(report_table)[which(names(report_table) == paste0("pct_", proband))] <- "probandpct"
-#
-#   report_table$seqnames <- paste0(report_table$seqnames, ":", report_table$start, "-", report_table$end)
-#   report_table$difference <- formattable::percent(report_table$difference, digits = 1)
-#   report_table$probandpct <- formattable::percent(report_table$probandpct, digits = 1)
-#   report_table$controlavg <- formattable::percent(report_table$controlavg, digits = 1)
-#
-#
-#   sig_introns <- unique(report_table[two_sd == TRUE & abs(difference) > 0.05, intron_no])
-#
-#   no_introns <- length(sig_introns)
-#   strand <- Refseq_Genes[tx_id %in% unique(Sample_File$transcript), strand][1]
-#   full_gene_figure(testgenes, unique(Sample_File$transcript), sig_introns, strand)
-#   # Close the graphics device
-#   dev.off()
-#
-#
-#
-#   normaltable <- report_table[two_sd == TRUE & intron_no %in% sig_introns & SJ_IR == "SJ" & annotated == "canonical"]
-#
-#   normalevents <- normaltable[, .(seqnames, event, difference, probandpct, controlavg, frame_conserved)][order(abs(difference), decreasing = T)]
-#
-#   names(normalevents) <- c("splice-junction", "event", "difference", "proband", "controls", "frame")
-#
-#   normalChangeBarPlot(normaltable)
-#
-#   splicingFrameConsequences(normaltable, sig_introns[[1]])
-#
-#   sig_introns_list <- list()
-#
-#   for (intron in sig_introns) {
-#     message("## Intron ", intron)
-#
-#     introntable <- report_table[two_sd == TRUE & introns == intron]
-#     insigrow <- colSums(table[two_sd == FALSE & introns == intron, .(difference, probandpct, controlavg)])
-#     insigrow <- data.table::as.data.table(t(c("", "NS events < 2sd", insigrow, "")))
-#     insigrow$difference <- formattable::percent(insigrow$difference, digits = 1)
-#     insigrow$probandpct <- formattable::percent(insigrow$probandpct, digits = 1)
-#     insigrow$controlavg <- formattable::percent(insigrow$controlavg, digits = 1)
-#
-#
-#     events <- introntable[, .(seqnames, event, difference, probandpct, controlavg, frame_conserved)][order(abs(difference), decreasing = T)]
-#
-#     names(events) <- c("splice-junction", "event", "difference", "proband", "controls", "frame")
-#
-#     sig_introns_list[[intron]] <- rbind(events, insigrow, use.names = FALSE)
-#
-#
-#     sds <- table[, lapply(.(two_sd, three_sd, four_sd), sum)]
-#
-#
-#     rmarkdown::render(
-#       input = "R/splicing_diagnostics_report.Rmd",
-#       output_file = paste(Export, "/", Sample_File$sampleID[sample_number], "_", testgenes, "_combined_full",
-#                           ".html",
-#                           sep = ""
-#       ),
-#       params = list(
-#         "normal" = normalevents,
-#         "aberrant" = sig_introns_list,
-#         "testgenes" = testgenes,
-#         "control_no" = length(ctrls),
-#         "sample" = Sample_File$sampleID[[sample_number]],
-#         "transcript" = Sample_File$transcript[[sample_number]],
-#         "refseq" = Refseq_Genes,
-#         "strand" = strand,
-#         "sds" = sds,
-#         "details" = "../../../Reports/v0.4 Cortar 05.22/AGRF Batch 3/Blood/AGRF_blood_batch_3_details.txt"
-#       )
-#     )
-#   }
-#
-#   # Full dataset export - no report option
-# } else if (full_all_genes_report == T) {
-#   # Exporting the combineddt dataframe to an excel spreadsheet
-#   openxlsx::write.xlsx(all_splicing_events_sample,
-#                        paste(Export, Sample_File$sampleID[sample_number],
-#                              "_combined_dt_", Sample_File$assembly[1],
-#                              ".xlsx",
-#                              sep = ""
-#                        ),
-#                        asTable = T,
-#                        overwrite = T
-#   )
-# }
