@@ -40,7 +40,6 @@
 #' @examples
 #' #### == COMING SOON == ####
 #'
-
 extractCountReads <- function(genes.GRanges,
                               introns.GRanges,
                               intron_starts.GRanges,
@@ -51,15 +50,6 @@ extractCountReads <- function(genes.GRanges,
                               annotation,
                               paired,
                               stranded) {
-
-  # inputs:
-  #   - genes.GRanges
-  #   - sample_file (ID)
-  #   - intron_starts.GRanges
-  #   - intron_ends.GRanges
-  #   - introns.GRanges
-  #   - genome
-
   message("Extracting and counting reads...")
 
   if (assembly == "hg19") {
@@ -121,7 +111,8 @@ extractCountReads <- function(genes.GRanges,
     sj[[sample_name]] <- GenomicAlignments::summarizeJunctions(alignment, genome = Genome_Assembly)
     BiocGenerics::strand(sj[[sample_name]]) <- GenomicRanges::mcols(sj[[sample_name]])[, "intron_strand"]
   }
-  #--Aggregate and count junctional reads for each sample------------------------
+
+
   combined_sj <- unique(unlist(GenomicRanges::GRangesList(unlist(sj))))
   combined_ir <- unique(unlist(GenomicRanges::GRangesList(unlist(ir))))
 
@@ -133,7 +124,6 @@ extractCountReads <- function(genes.GRanges,
 
   for (sample_number in 1:length(sample_names)) {
     sample_name <- sample_names[sample_number]
-    # message("\t", sample_name)
 
     GenomicRanges::mcols(combined_sj)$SJ_IR <- "SJ"
     GenomicRanges::mcols(combined_sj)[paste0("count_", sample_name)] <- 0
@@ -147,8 +137,10 @@ extractCountReads <- function(genes.GRanges,
     GenomicRanges::mcols(combined_ir[S4Vectors::queryHits(qryhits)])[paste0("count_", sample_name)] <-
       GenomicRanges::mcols(ir[[sample_name]][S4Vectors::queryHits(qryhits)])[, "ir"]
   }
+
   combined_sj <- c(combined_sj, combined_ir)
   GenomicRanges::mcols(combined_sj)[c("ir_s", "ir_e")] <- NULL
+
   message("")
   return(combined_sj)
 }
