@@ -1,7 +1,7 @@
 annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_other_tx.GRanges, introns, assembly) {
 
-    message("Annotating and quantifying events...")
-      #--Extract, annotate, and quantify all events at canonical junctions-----------
+  message("Annotating and quantifying events...")
+
   combined_sj_sorted <- GenomeInfoDb::sortSeqlevels(combined_sj)
   combined_sj_sorted <- sort(combined_sj)
 
@@ -184,34 +184,6 @@ framed <- function(query_intron.dt, assembly){
 
         }else if(query_intron.dt$SJ_IR[event] == "IR"){
             frame[event] <- ""
-            # boundaries <- c(query_intron.dt$start[event],query_intron.dt$end[event])
-            # message(boundaries)
-            # for(gpos in seq(1,2)){
-            #     #Find gene, canonical transcript, and overlapping regions
-            #     mendelian_introns_gene <- Mendelian_Intron_PTCs[gene == query_intron.dt$gene[event]]
-            #     #Find gene, canonical transcript, overlapping region and strand
-            #     for(regions in 1:nrow(Mendelian_Intron_PTCs)){
-            #         message(regions)
-            #         if(between(boundaries[gpos],
-            #                    mendelian_introns_gene$region_start[regions],
-            #                    mendelian_introns_gene$region_end[regions])){
-            #             print(regions)
-            #             frame[event] <- mendelian_introns_gene$frame[regions]
-            #             if(is.na(frame[event])){
-            #                 frame[event] <- ""
-            #                 break
-            #             }else if(frame[event] == TRUE){
-            #                 if(sum(mendelian_introns_gene[regions,c(window1ptc,window2ptc,window3ptc)]) == Inf){
-            #                     frame[event] <- FALSE
-            #                     break
-            #                 }else{
-            #                     frame[event] <- ""
-            #                     break
-            #                 }
-            #             }
-            #         }
-            #     }
-            # }
         }else{
             frame[event] <- ""
         }
