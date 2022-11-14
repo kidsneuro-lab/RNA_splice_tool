@@ -14,7 +14,7 @@ in test samples.
 ## Installation
 
 You can install the development version of cortar from
-[GitHub](https://github.com/) with:
+[GitHub](https://github.com/) with: 
 
 ``` r
 # install.packages("devtools")
@@ -35,12 +35,13 @@ the canonical RefSeq transcript)
 * bamfile: Absolute or relative file path to the processed bamfile of the sample
 
 ``` r
-#> sampleID	familyID	sampletype	genes	transcript	bamfile
-#> proband_1	1	test	DMD	NM_004006.3	Z:/path/to/bamfile/proband_1.bam
-#> proband_2	2	test	TTN	NM_001267550.2	Z:/path/to/bamfile/proband_2.bam
-#> proband_3	3	test	CFTR	NM_000492.4	Z:/path/to/bamfile/proband_3.bam
-#> proband_4	4	test	NF1	NM_001042492.3	Z:/path/to/bamfile/proband_4.bam
-#> mother_4	4		NF1	NM_001042492.4	Z:/path/to/bamfile/mother_4.bam
-#> proband_5	5	test	COL2A1	NM_001844.5	Z:/path/to/bamfile/proband_5.bam
+#> sampleID    familyID   sampletype   genes      transcript       bamfile
+#> ---------   --------   ----------   ------     --------------   --------------------------------
+#> proband_1   1	  test         DMD        NM_004006.3	   Z:/path/to/bamfile/proband_1.bam
+#> proband_2   2	  test         TTN	  NM_001267550.2   Z:/path/to/bamfile/proband_2.bam
+#> proband_3   3	  test         CFTR	  NM_000492.4	   Z:/path/to/bamfile/proband_3.bam
+#> proband_4   4	  test         NF1	  NM_001042492.3   Z:/path/to/bamfile/proband_4.bam
+#> mother_4    4		       NF1	  NM_001042492.4   Z:/path/to/bamfile/mother_4.bam
+#> proband_5   5	  test         COL2A1	  NM_001844.5	   Z:/path/to/bamfile/proband_5.bam
 ```
 
