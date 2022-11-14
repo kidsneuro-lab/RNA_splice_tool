@@ -1,5 +1,0 @@
-sampleID	familyID	sampletype	genes	transcript	bamfile
-374_THOC2_P_D	374	test	THOC2	NM_001081550	Z:/PRJ-GDT/NGS_data/AGRF/GRCh38/RNASeq/CAGRF22029591/subset/374_THOC2_P_D.Aligned.sorted_subset.bam
-389_IL6ST_P_D	389	test	IL6ST	NM_002184	Z:/PRJ-GDT/NGS_data/AGRF/GRCh38/RNASeq/CAGRF22029591/subset/389_IL6ST_P_D.Aligned.sorted_subset.bam
-422_POMT2_P_D	422	test	POMT2	NM_013382	Z:/PRJ-GDT/NGS_data/AGRF/GRCh38/RNASeq/CAGRF22029591/subset/422_POMT2_P_D.Aligned.sorted_subset.bam
-AlCo_PHF_DMSO	423	test	PYROXD1	NM_024854	Z:/PRJ-GDT/NGS_data/AGRF/GRCh38/RNASeq/CAGRF22029591/subset/AlCo_PHF_DMSO.Aligned.sorted_subset.bam
