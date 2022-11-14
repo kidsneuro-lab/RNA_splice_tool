@@ -20,21 +20,19 @@
 #' @examples
 #' #### == COMING SOON == ####
 #'
-
 selectGenesTranscripts <- function(genes,
                                    assembly,
                                    annotation) {
-
-
-message("Selecting genes and transcripts...")
-message("")
+  # Initialisation message
+  message("Selecting genes and transcripts...")
+  message("")
 
   if (assembly == "hg38") {
-      Refseq_Genes <- refseq_introns_exons_hg38
-      Ensembl_Genes <- ensembl_allgenes_chr1_Y_hg38
+    Refseq_Genes <- refseq_introns_exons_hg38
+    Ensembl_Genes <- ensembl_allgenes_chr1_Y_hg38
   } else if (assembly == "hg19") {
-      Refseq_Genes <- refseq_introns_exons_hg19
-      Ensembl_Genes <- ensembl_allgenes_chr1_Y_hg19
+    Refseq_Genes <- refseq_introns_exons_hg19
+    Ensembl_Genes <- ensembl_allgenes_chr1_Y_hg19
   }
 
   gene_tx <- tx_extraction(genes, Refseq_Genes)
@@ -71,11 +69,8 @@ message("")
 #' @examples
 #' #### == COMING SOON == ####
 #'
-
-# add error - transcript/gene could not be found and then return suggestions using grep
 tx_extraction <- function(genes,
                           refseq_assembly = refseq_introns_exons_hg38) {
-
   genes_tx <- data.table("gene_name" = character(), "tx" = character())
 
   for (gene in seq(1, length(genes))) {
@@ -110,7 +105,6 @@ gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_
 }
 
 introns_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes) {
-
   introns <- Refseq_Genes[tx_version_id %in% gene_tx$tx & region_type == c("intron")]
 
   introns.GRanges <- GenomicRanges::GRanges(
