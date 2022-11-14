@@ -6,7 +6,10 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of cortar is to …
+The goal of cortar is to extract reads at the exon-intron junction from RNA-seq
+and report the proportion of splicing events across each intron. By comparing
+these values to controls, deviations from normal splicing can be characterised
+in test samples.
 
 ## Installation
 
@@ -18,38 +21,26 @@ You can install the development version of cortar from
 devtools::install_github("kidsneuro-lab/RNA_splice_tool")
 ```
 
-## Example
-
-This is a basic example which shows you how to solve a common problem:
+## Usage
+To use cortar, a samplefile needs to be created for each run. This file
+contains six columns and a row for each sample (as shown below):
+* sampleID: A unique identifier for the sample
+* familyID: A unique identifier for related samples that should not be compared
+to one another
+* sampletype: Whether analysis and report is desired for this sample ("test")
+* genes: Gene symbol for gene under investigation (can be blank for
+panel/research mode)
+* transcript: Transcript under investigation (blank transcript will default to
+the canonical RefSeq transcript)
+* bamfile: Absolute or relative file path to the processed bamfile of the sample
 
 ``` r
-#library(cortar)
-## basic example code
+#> sampleID	familyID	sampletype	genes	transcript	bamfile
+#> proband_1	1	test	DMD	NM_004006.3	Z:/path/to/bamfile/proband_1.bam
+#> proband_2	2	test	TTN	NM_001267550.2	Z:/path/to/bamfile/proband_2.bam
+#> proband_3	3	test	CFTR	NM_000492.4	Z:/path/to/bamfile/proband_3.bam
+#> proband_4	4	test	NF1	NM_001042492.3	Z:/path/to/bamfile/proband_4.bam
+#> mother_4	4		NF1	NM_001042492.4	Z:/path/to/bamfile/mother_4.bam
+#> proband_5	5	test	COL2A1	NM_001844.5	Z:/path/to/bamfile/proband_5.bam
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
-
-``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
-```
-
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this. You could also
-use GitHub Actions to re-render `README.Rmd` every time you push. An
-example workflow can be found here:
-<https://github.com/r-lib/actions/tree/v1/examples>.
-
-You can also embed plots, for example:
-
-<img src="man/figures/README-pressure-1.png" width="100%" />
-
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub and CRAN.

@@ -46,7 +46,7 @@ contains six columns and a row for each sample (as shown below):
 * sampleID: A unique identifier for the sample
 * familyID: A unique identifier for related samples that should not be compared
 to one another
-* sampletype: Whether analysis and report is desired for this sample ("test")
+* samplet ype: Whether analysis and report is desired for this sample ("test")
 * genes: Gene symbol for gene under investigation (can be blank for
 panel/research mode)
 * transcript: Transcript under investigation (blank transcript will default to
