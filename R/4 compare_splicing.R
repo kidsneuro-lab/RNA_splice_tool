@@ -76,25 +76,6 @@ if(mode == "default" | mode == "panel"){
         }
       }
 
-      # Normalisation - 20220923
-      all_splicing_events_sample$norm_proband <-
-        (all_splicing_events_sample[, paste0("pct_", proband), with = F] /
-          ((all_splicing_events_sample[, paste0("pct_", proband), with = F] /
-            all_splicing_events_sample$controlavg) /
-            ((1 - all_splicing_events_sample[, paste0("pct_", proband), with = F]) /
-              (1 - all_splicing_events_sample$controlavg)))) * all_splicing_events_sample[, paste0("pct_", proband), with = F]
-
-      all_splicing_events_sample$norm_controlavg <-
-        (all_splicing_events_sample[, paste0("pct_", proband), with = F] /
-          ((all_splicing_events_sample[, paste0("pct_", proband), with = F] /
-            all_splicing_events_sample$controlavg) /
-            ((1 - all_splicing_events_sample[, paste0("pct_", proband), with = F]) /
-              (1 - all_splicing_events_sample$controlavg)))) * all_splicing_events_sample$controlavg
-
-      all_splicing_events_sample$norm_difference <-
-        all_splicing_events_sample$norm_proband - all_splicing_events_sample$norm_controlavg
-
-
       # Order columns and sort by the greatest difference
       all_splicing_events_sample <- all_splicing_events_sample[order(
         abs(all_splicing_events_sample$difference),
@@ -181,10 +162,3 @@ if(mode == "default" | mode == "panel"){
   return(comparisons)
 }
 
-# }if(mode == "research"){
-#   message("research")
-#   all_splicing_events_sample <- all_splicing_events
-#   ctrls <- Sample_File$sampleID
-#   ctrlscols <- paste0("pct_", ctrls)
-#   ctrlsreadcols <- paste0("count_", ctrls)
-# }
