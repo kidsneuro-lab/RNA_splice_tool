@@ -48,26 +48,28 @@ the canonical RefSeq transcript)
 ## Subsetting
 To subset bamfiles to use with cortar, copy the contents of `inst/` to the folder containing `.cram` files
 to be subsetted.
-Prepare cramfile.txt:
+
+#### Prepare cramfile.txt:
 1. Remove the contents of `cramfiles_example.txt` and replace with the paths/names of the `.cram` files
 to be subsetted.
 2. Rename `cramfiles_example.txt` to `cramfiles.txt`
-Prepare script:
-1. Run `subsetBamfiles()` in R using a character vector of genes of interest and the assembly as arguments
-* For example:
+
+#### Prepare script:
+
+1. Run `subsetBamfiles()` in R using a character vector of genes of interest and the assembly as arguments. For example:
 ```r
 #Get gene coordinates for subsetting script
-subsetBamfiles(c("DMD","TTN","COL1A1","CFTR"), 38)
+subsetBamfiles(c("DMD","TTN","COL1A1"), 38)
 
-#> "''chr17:50183101-50202632'' ''chr2:178524989-178831802'' ''chr7:117286120-117716971'' ''chrX:31096677-33340609''"
+#> "''chr17:50183101-50202632'' ''chr2:178524989-178831802'' ''chr7:117286120-117716971''"
 ```
-2. Copy the output from `subsetBamfiles()` to the position in subset.sh marked with #replace this tag with gene coordinates#,
+2. Copy the output from `subsetBamfiles()` to the position in subset.sh marked with `#replace this tag with gene coordinates#`,
 exclude the double quotes.
 3. Add the reference `.fasta` file used for alignment of the RNA-seq data to the position in subset.sh marked with
-#replace this tag with the reference .fasta#
-4. Add the directory into which the final subsetted files should be saved to the position in subset.sh marked with #replace
-this tag with the path/to/the/directory#. Ensure not to remove the double quotation marks.
+`#replace this tag with the reference .fasta#`
+4. Add the directory into which the final subsetted files should be saved to the position in subset.sh marked with `#replace
+this tag with the path/to/the/directory#`. Ensure not to remove the double quotation marks.
 
-Final steps:
+#### Final steps:
 1. Ensure samtools is installed and on the path.
 2. Run subset.sh script.
