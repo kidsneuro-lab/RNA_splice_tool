@@ -23,7 +23,7 @@ devtools::install_github("kidsneuro-lab/RNA_splice_tool")
 
 ## Usage
 To use cortar, a samplefile needs to be created for each run. This file
-contains six columns and a row for each sample (as shown below):
+contains six tab separated columns and a row for each sample (as shown below):
 * sampleID: A unique identifier for the sample
 * familyID: A unique identifier for related samples that should not be compared
 to one another
@@ -36,7 +36,6 @@ the canonical RefSeq transcript)
 
 ``` r
 #> sampleID    familyID   sampletype   genes      transcript       bamfile
-#> ---------   --------   ----------   ------     --------------   --------------------------------
 #> proband_1   1	  test         DMD        NM_004006	   Z:/path/to/bamfile/proband_1.bam
 #> proband_2   2	  test         TTN	  NM_001267550     Z:/path/to/bamfile/proband_2.bam
 #> proband_3   3	  test         CFTR	  NM_000492	   Z:/path/to/bamfile/proband_3.bam
@@ -44,6 +43,26 @@ the canonical RefSeq transcript)
 #> mother_4    4		       NF1	  NM_001042492     Z:/path/to/bamfile/mother_4.bam
 #> proband_5   5	  test         COL2A1	  NM_001844	   Z:/path/to/bamfile/proband_5.bam
 ```
+
+After creating a samplefile, cortar can be run using the `cortar()` function as follows:
+
+```r
+
+cortar(
+  file = "path/to/cortar_samplefile.tsv",
+  mode = "default" or "panel" or "research",
+  assembly = "hg38" or "hg19",
+  annotation = "UCSC" or "1000genomes",
+  paired = TRUE or FALSE,
+  stranded = 0 or 1 or 2,
+  output_dir = "path/to/output/directory",
+  genelist = NULL or c("gene1", "gene2", etc)
+)
+
+```
+
+Multiple cortar samplfiles can be run in sequence with the `cortar_batch()` function, substituting a path to a folder of samplefiles for the file argument.
+
 
 ## Subsetting
 To subset bamfiles to use with cortar, copy the contents of `inst/` to the folder containing `.cram` files
