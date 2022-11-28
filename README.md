@@ -61,7 +61,7 @@ cortar(
 
 ```
 
-Multiple cortar samplfiles can be run in sequence with the `cortar_batch()` function, substituting a path to a folder of samplefiles for the file argument.
+Multiple cortar samplefiles can be run in sequence with the `cortar_batch()` function, substituting a path to a folder of samplefiles for the file argument.
 
 
 ## Subsetting
@@ -82,14 +82,16 @@ subsetBamfiles(c("DMD","TTN","COL1A1"), 38)
 
 #> "''chr17:50183101-50202632'' ''chr2:178524989-178831802'' ''chr7:117286120-117716971''"
 ```
-2. Copy the output from `subsetBamfiles()` to the position in subset.sh marked with `#replace this tag with gene coordinates#`,
-exclude the double quotes.
-3. Add the reference `.fasta` file used for alignment of the RNA-seq data to the position in subset.sh marked with
-`#replace this tag with the reference .fasta#`
+2. Copy the output from `subsetBamfiles()` to the position in subset.sh marked with `#replace this tag with gene coordinates#`.
+Exclude the double quotation marks.
+3. Add the path to the reference `.fasta` file used for alignment of the RNA-seq data to the position in subset.sh marked with
+`#replace this tag with the reference .fasta#`. Do not include quotation marks
 4. Add the directory into which the final subsetted files should be saved to the position in subset.sh marked with `#replace
 this tag with the path/to/destination/directory#`. Ensure not to remove the double quotation marks.
 
 #### Final steps:
-1. Ensure samtools is installed and on the path.
+1. Ensure samtools is installed and on the PATH.
 2. Run subset.sh script.
 3. Update cortar samplefile with subsetted `.bam` file paths
+
+Greater automation of the subsetting process is planned for future versions of cortar.
