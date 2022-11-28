@@ -73,3 +73,4 @@ this tag with the path/to/destination/directory#`. Ensure not to remove the doub
 #### Final steps:
 1. Ensure samtools is installed and on the path.
 2. Run subset.sh script.
+3. Update cortar samplefile with subsetted `.bam` file paths
