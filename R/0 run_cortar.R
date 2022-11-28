@@ -15,8 +15,8 @@
 #' @param stranded Strandedness of the RNA-seq: `0` for unstranded, `1`
 #'     for forward stranded or `2` for reverse stranded
 #' @param subset Does the RNA-Seq need to be subsetted to the genes
-#'     of interest? `TRUE`/`FALSE` (Optional, but improves speed of subsequent
-#'     runs; not currently implemented in v1)
+#'     of interest? `TRUE`/`FALSE` (Optional but significantly improves speed
+#'     of subsequent analyses)
 #' @param output_dir A directory path, pointing to the desired location for
 #'     export of cortar results (e.g. `"output/"`)
 #' @param genelist A character vector with genes/RefSeq transcripts of interest
@@ -103,6 +103,16 @@ cortar <- function(file,
 
   # Read in cortar samplefile
   file <- data.table::fread(file)
+  if (sum((names(file) == c("sampleID",
+                            "familyID",
+                            "sampletype",
+                            "genes",
+                            "transcript",
+                            "bamfile"))) == 0) {
+    stop("Samplefile must have correct headers (see readme)
+         Supplied:", names(file))
+  }
+
 
   # Select genes and transcripts of interest
   # A genelist must be provided for panel or research mode
@@ -164,6 +174,7 @@ cortar <- function(file,
   # Termination message
   message("")
   message(paste("Done! Reports saved in:", output_dir))
+  message("")
 }
 
 #' Run multiple instances of cortar
@@ -232,6 +243,10 @@ cortar_batch <- function(folder,
 
 subsetBamfiles <- function(genes, hg, overhang = 1000){
 
+  # Read in cortar samplefile
+  # file <- data.table::fread(file)
+
+  # Select correct gene annotation for chosen assembly
   if (hg == 38) {
     Refseq_Genes <- refseq_introns_exons_hg38
     Ensembl_Genes <- ensembl_allgenes_chr1_Y_hg38
@@ -254,8 +269,11 @@ subsetBamfiles <- function(genes, hg, overhang = 1000){
   }
 
   subsetgenes <- Ensembl_Genes[`Gene name` %in% genes_tx$gene_name]
+
+  # Format gene input
   forsubset <- paste0("\'","\'","chr",subsetgenes$`Chromosome/scaffold name`,":",subsetgenes$`Gene start (bp)`-overhang,"-",
                       subsetgenes$`Gene end (bp)`+overhang,"\'","\'")
   forsubset <- paste(forsubset,collapse=" ")
+
   return(forsubset)
 }
