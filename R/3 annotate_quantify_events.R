@@ -49,7 +49,7 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
 
     # Convert intron GRange into data.table
     query_intron.dt <- data.table::as.data.table(query_intron.GRanges)
-    query_intron.dt <<- unique(query_intron.dt)
+    query_intron.dt <- unique(query_intron.dt)
 
     # Calculate the proportion of splicing at the intron each event represents
     for (sample_name in ids) {
@@ -116,20 +116,20 @@ eventAnnotation <- function(query_intron.dt){
             #cryptic splice-site use
         }else if (!is.na(exon_range_start)){
             if (strand == "-"){
-                events[event] <- (paste("CD", " ~ ", "exon ",
+                events[event] <- (paste("cryptic donor", " ~ ", "exon ",
                                         exon_range_start+1, sep="", collapse=""))
             }
             if (strand == "+"){
                 events[event] <- (paste("exon ",exon_range_start, " ~ ",
-                                        "CA", sep="", collapse=""))
+                                        "cryptic acceptor", sep="", collapse=""))
             }
         }else if (!is.na(exon_range_end)){
             if (strand == "-"){
                 events[event] <- (paste("exon ", exon_range_end, " ~ ",
-                                        "CA", sep="", collapse=""))
+                                        "cryptic acceptor", sep="", collapse=""))
             }
             if (strand == "+"){
-                events[event] <- (paste("CD", " ~ ", "exon ",
+                events[event] <- (paste("cryptic donor", " ~ ", "exon ",
                                         exon_range_end+1, sep="", collapse=""))
             }
 
@@ -145,7 +145,7 @@ eventAnnotation <- function(query_intron.dt){
 framed <- function(query_intron.dt, assembly){
 
     if (assembly == "hg38") {
-        rfsq <<- refseq_introns_exons_hg38
+        rfsq <- refseq_introns_exons_hg38
     } else if (assembly == "hg19") {
         rfsq <- refseq_introns_exons_hg19
     }

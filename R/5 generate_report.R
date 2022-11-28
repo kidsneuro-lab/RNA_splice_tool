@@ -3,9 +3,9 @@ generateReport <- function(comparisons, Sample_File, Export, mode) {
 
   if(mode == "default" | mode == "panel"){
     for (sample_number in seq(1, nrow(Sample_File))) {
-      all_splicing_events_sample <- comparisons[[sample_number]]
       # Initialise new copy of the all_splicing_events dataset
       if (Sample_File$sampletype[sample_number] == "test") {
+        all_splicing_events_sample <- comparisons[[sample_number]]
         proband <- Sample_File$sampleID[sample_number]
         family <- Sample_File$sampleID[which(
           Sample_File$family == Sample_File$family[sample_number]

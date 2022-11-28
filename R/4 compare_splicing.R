@@ -13,7 +13,7 @@ if(mode == "default" | mode == "panel"){
       family <- Sample_File$sampleID[which(
         Sample_File$family == Sample_File$family[sample_number]
       )]
-      message("\t", family)
+      message("\t", proband)
       familycols <- paste0("pct_", family)
       familyreadcols <- paste0("count_", family)
 
@@ -28,7 +28,6 @@ if(mode == "default" | mode == "panel"){
       # Proband
       all_splicing_events_sample$proband <- Sample_File$sampleID[sample_number]
 
-    }
       # Control average pct, read count, sd, and n
       all_splicing_events_sample$controlavg <- rowMeans(
         all_splicing_events_sample[, ..ctrlscols]
@@ -105,15 +104,12 @@ if(mode == "default" | mode == "panel"){
         "three_sd",
         "four_sd",
         "intron_no",
-        "SJ_IR",
-        "norm_difference",
-        "norm_proband",
-        "norm_controlavg"
+        "SJ_IR"
       ),
       with = F
       ]
       comparisons[[sample_number]] <- all_splicing_events_sample
-    }
+    }}
   }else if(mode == "research"){
       all_splicing_events_sample <- all_splicing_events
       ctrls <- Sample_File$sampleID

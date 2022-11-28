@@ -5,3 +5,4 @@ temp*
 output/*
 src/*
 data-raw/*
+inst/*
