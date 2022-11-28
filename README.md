@@ -32,16 +32,42 @@ to one another
 panel/research mode)
 * transcript: Transcript under investigation (blank transcript will default to
 the canonical RefSeq transcript)
-* bamfile: Absolute or relative file path to the processed bamfile of the sample
+* bamfile: Absolute or relative file path to the processed bamfile of the sample 
 
 ``` r
 #> sampleID    familyID   sampletype   genes      transcript       bamfile
 #> ---------   --------   ----------   ------     --------------   --------------------------------
-#> proband_1   1	  test         DMD        NM_004006.3	   Z:/path/to/bamfile/proband_1.bam
-#> proband_2   2	  test         TTN	  NM_001267550.2   Z:/path/to/bamfile/proband_2.bam
-#> proband_3   3	  test         CFTR	  NM_000492.4	   Z:/path/to/bamfile/proband_3.bam
-#> proband_4   4	  test         NF1	  NM_001042492.3   Z:/path/to/bamfile/proband_4.bam
-#> mother_4    4		       NF1	  NM_001042492.4   Z:/path/to/bamfile/mother_4.bam
-#> proband_5   5	  test         COL2A1	  NM_001844.5	   Z:/path/to/bamfile/proband_5.bam
+#> proband_1   1	  test         DMD        NM_004006	   Z:/path/to/bamfile/proband_1.bam
+#> proband_2   2	  test         TTN	  NM_001267550     Z:/path/to/bamfile/proband_2.bam
+#> proband_3   3	  test         CFTR	  NM_000492	   Z:/path/to/bamfile/proband_3.bam
+#> proband_4   4	  test         NF1	  NM_001042492     Z:/path/to/bamfile/proband_4.bam
+#> mother_4    4		       NF1	  NM_001042492     Z:/path/to/bamfile/mother_4.bam
+#> proband_5   5	  test         COL2A1	  NM_001844	   Z:/path/to/bamfile/proband_5.bam
 ```
 
+## Subsetting
+To subset bamfiles to use with cortar, copy the contents of `inst/` to the folder containing `.cram` files
+to be subsetted.
+Prepare cramfile.txt:
+1. Remove the contents of `cramfiles_example.txt` and replace with the paths/names of the `.cram` files
+to be subsetted.
+2. Rename `cramfiles_example.txt` to `cramfiles.txt`
+Prepare script:
+1. Run `subsetBamfiles()` in R using a character vector of genes of interest and the assembly as arguments
+* For example:
+```r
+#Get gene coordinates for subsetting script
+subsetBamfiles(c("DMD","TTN","COL1A1","CFTR"), 38)
+
+#> "''chr17:50183101-50202632'' ''chr2:178524989-178831802'' ''chr7:117286120-117716971'' ''chrX:31096677-33340609''"
+```
+2. Copy the output from `subsetBamfiles()` to the position in subset.sh marked with #replace this tag with gene coordinates#,
+exclude the double quotes.
+3. Add the reference `.fasta` file used for alignment of the RNA-seq data to the position in subset.sh marked with
+#replace this tag with the reference .fasta#
+4. Add the directory into which the final subsetted files should be saved to the position in subset.sh marked with #replace
+this tag with the path/to/the/directory#. Ensure not to remove the double quotation marks.
+
+Final steps:
+1. Ensure samtools is installed and on the path.
+2. Run subset.sh script.
