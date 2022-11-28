@@ -1,0 +1,6 @@
+/path/to/cramfile/proband_1.bam
+/path/to/cramfile/proband_2.bam
+/path/to/bamfile/proband_3.bam
+/path/to/bamfile/proband_4.bam
+/path/to/bamfile/mother_4.bam
+/path/to/bamfile/proband_5.bam

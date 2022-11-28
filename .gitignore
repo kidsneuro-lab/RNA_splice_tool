@@ -5,4 +5,4 @@ temp*
 output/*
 src/*
 data-raw/*
-inst/*
+inst/*.R*
