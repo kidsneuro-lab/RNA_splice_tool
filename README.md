@@ -68,7 +68,7 @@ exclude the double quotes.
 3. Add the reference `.fasta` file used for alignment of the RNA-seq data to the position in subset.sh marked with
 `#replace this tag with the reference .fasta#`
 4. Add the directory into which the final subsetted files should be saved to the position in subset.sh marked with `#replace
-this tag with the path/to/the/directory#`. Ensure not to remove the double quotation marks.
+this tag with the path/to/destination/directory#`. Ensure not to remove the double quotation marks.
 
 #### Final steps:
 1. Ensure samtools is installed and on the path.
