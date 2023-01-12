@@ -9,18 +9,20 @@
 #'     readme for more information
 #' @param assembly Assembly used for alignment: either `"hg38"` (default) or
 #'     `"hg19"`
-#' @param annotation  Annotation used for alignment: either `"UCSC"` or
-#'     `"1000genomes"`
+#' @param annotation  Annotation used for alignment: either `"UCSC"`,
+#'     `"1000genomes"` or `NCBI`
 #' @param paired Is the RNA-seq paired-end?: `TRUE`/`FALSE`
 #' @param stranded Strandedness of the RNA-seq: `0` for unstranded, `1`
 #'     for forward stranded or `2` for reverse stranded
 #' @param subset Does the RNA-Seq need to be subsetted to the genes
 #'     of interest? `TRUE`/`FALSE` (Optional but significantly improves speed
-#'     of subsequent analyses)
+#'     of subsequent analyses - not currently available)
 #' @param output_dir A directory path, pointing to the desired location for
 #'     export of cortar results (e.g. `"output/"`)
 #' @param genelist A character vector with genes/RefSeq transcripts of interest
 #'     (Only for panel or research modes; default = NULL)
+#' @param prefix A character vector to be appended to the beginning of the
+#'     output file names
 #'
 #' @export
 #'
@@ -35,7 +37,8 @@ cortar <- function(file,
                    stranded = 2,
                    subset = NULL,
                    output_dir = "~",
-                   genelist = NULL) {
+                   genelist = NULL,
+                   prefix = "") {
   # Error catching
   # file
   if (!file.exists(file)) {
@@ -59,8 +62,8 @@ cortar <- function(file,
   }
 
   # annotation
-  if (annotation %nin% c("1000genomes", "UCSC")) {
-    stop("Annotation '", annotation, "' is not an available annotation ('1000genomes','UCSC')")
+  if (annotation %nin% c("1000genomes", "UCSC", "NCBI")) {
+    stop("Annotation '", annotation, "' is not an available annotation ('1000genomes','UCSC','NCBI')")
   }
 
   # paired
@@ -168,7 +171,8 @@ cortar <- function(file,
     comparisons = comparisons,
     Sample_File = file,
     Export = output_dir,
-    mode = mode
+    mode = mode,
+    prefix = prefix
   )
 
   # Termination message
@@ -202,7 +206,8 @@ cortar_batch <- function(folder,
                            stranded = 2,
                            subset = F,
                            output_dir = "~",
-                           genelist = NULL){
+                           genelist = NULL,
+                           prefix = ""){
   batches_in <- sapply(list.files(folder, pattern = pattern),function(x){paste0(folder,"/",x)})
   batches_out <- sapply(list.files(folder, pattern = pattern),function(x){paste0(output_dir,"/",strsplit(x,"\\.")[[1]][1])})
   for(batch in seq(1,length(batches_in))){
@@ -218,7 +223,8 @@ cortar_batch <- function(folder,
            stranded = stranded,
            subset = subset,
            output_dir = batches_out[batch],
-           genelist = genelist)
+           genelist = genelist,
+           prefix = prefix)
   }
 }
 
