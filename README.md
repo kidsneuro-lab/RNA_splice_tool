@@ -21,6 +21,8 @@ You can install the development version of cortar from
 devtools::install_github("kidsneuro-lab/RNA_splice_tool")
 ```
 
+cortar was built in R 4.1.3
+
 ## Usage
 To use cortar, a samplefile needs to be created for each run. This file
 contains six tab separated columns and a row for each sample (as shown below):
