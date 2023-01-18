@@ -6,7 +6,7 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of cortar is to extract reads at the exon-intron junction from RNA-seq
+The goal of cortar is to extract split and non-split reads from RNA-seq
 and report the proportion of splicing events across each intron. By comparing
 these values to controls, deviations from normal splicing can be characterised
 in test samples.
