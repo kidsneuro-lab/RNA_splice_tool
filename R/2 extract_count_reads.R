@@ -59,7 +59,11 @@ extractCountReads <- function(genes.GRanges,
       Genome_Assembly <- BSgenome.Hsapiens.1000genomes.hs37d5::BSgenome.Hsapiens.1000genomes.hs37d5
     }
   } else if (assembly == "hg38") {
-    Genome_Assembly <- BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38
+    if (annotation == "UCSC"){
+      Genome_Assembly <- BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38
+    } else if (annotation == "NCBI"){
+      Genome_Assembly <- BSgenome.Hsapiens.NCBI.GRCh38::BSgenome.Hsapiens.NCBI.GRCh38
+    }
   }
 
   sj <- list()

@@ -1,4 +1,4 @@
-generateReport <- function(comparisons, Sample_File, Export, mode) {
+generateReport <- function(comparisons, Sample_File, Export, mode, prefix) {
     message("Generating reports...")
 
   if(mode == "default" | mode == "panel"){
@@ -17,7 +17,8 @@ generateReport <- function(comparisons, Sample_File, Export, mode) {
         # Set report outputs and parameters
         report <- T
         splicing_diagnostics_report <- F
-        full_all_genes_report <- F
+        full_all_genes_report <- T
+        figure <- F
 
         if(mode == "panel"){
           testgenes <- unique(all_splicing_events_sample$gene)
@@ -27,10 +28,11 @@ generateReport <- function(comparisons, Sample_File, Export, mode) {
           testgenename <- unique(Sample_File$genes[sample_number])
         }
         # will need a for loop
-        for(gene in testgenes){
-          normalSpliceMap(all_splicing_events_sample, familycols[1], proband, gene, export = Export, mode = mode)
+        if(figure == T){
+          for(gene in testgenes){
+            normalSpliceMap(all_splicing_events_sample, familycols[1], proband, gene, export = Export, mode = mode, prefix = prefix)
+          }
         }
-
         # Generate filtered excel spreadsheet +/- summary html
         # Excel spreadsheet
         if (report == TRUE) {
@@ -38,20 +40,21 @@ generateReport <- function(comparisons, Sample_File, Export, mode) {
             length(familycols),
             gene = testgenename,
             Export,
-            Sample_File$sampleID[sample_number]
+            Sample_File$sampleID[sample_number],
+            prefix = prefix
           )
         }
-        if (report == FALSE) {
+        if (full_all_genes_report == TRUE) {
           data.table::fwrite(all_splicing_events_sample,
             file = paste0(
-              Export, "/", Sample_File$sampleID[sample_number], "_", testgenes, "_combined_full",
+              Export, "/",prefix,Sample_File$sampleID[sample_number], "_", testgenename, "_combined_full",
               ".tsv"
             ), sep = "\t"
           )
         }
       }
     }
-  }else if(mode == "research"){
+   }else if(mode == "research"){
     all_splicing_events_sample <- comparisons
     testgenes <- unique(all_splicing_events_sample$gene)
     proband <- "splicing_analysis"
@@ -61,20 +64,21 @@ generateReport <- function(comparisons, Sample_File, Export, mode) {
                       proband,
                       gene,
                       export = Export,
-                      mode = mode)
+                      mode = mode,
+                      prefix = prefix)
     }
     data.table::fwrite(all_splicing_events_sample,
                        file = paste0(
-                         Export, "/", "splicing_analysis","_combined_full",
+                         Export, "/",prefix,"splicing_analysis","_combined_full",
                          ".tsv"
                        ), sep = "\t"
     )
   }
 }
 
-normalSpliceMap <- function(table, familycols, proband, genes, export, mode){
+normalSpliceMap <- function(table, familycols, proband, genes, export, mode, prefix){
 
-  pdf(paste0(export,"/", proband,"_",genes,"_normalSpliceMap.pdf"), width = 5, height = 3)
+  pdf(paste0(export,"/",prefix,proband,"_",genes,"_normalSpliceMap.pdf"), width = 5, height = 3)
 
     filtered_table <- as.data.table(table[SJ_IR == "SJ" & annotated == 'canonical' & gene == genes])
 
@@ -103,7 +107,7 @@ normalSpliceMap <- function(table, familycols, proband, genes, export, mode){
 
     dev.off()
 
-    pdf(paste0(export,"/",proband,"_",genes,"_normalSpliceMap_bar.pdf"), width = 5, height = 3)
+    pdf(paste0(export,"/",prefix,proband,"_",genes,"_normalSpliceMap_bar.pdf"), width = 5, height = 3)
 
     myplot1 <- ggplot() +
         geom_ribbon(aes(ymin = filtered_table$controlsd*-2,
@@ -123,7 +127,7 @@ normalSpliceMap <- function(table, familycols, proband, genes, export, mode){
 }
 
 #Generate Report
-generate.excel <- function(data, familymembers, gene, export, sample){
+generate.excel <- function(data, familymembers, gene, export, sample, prefix){
 
     # Create an Excel workbook object and add a worksheet
     wb <- openxlsx::createWorkbook()
@@ -161,7 +165,7 @@ generate.excel <- function(data, familymembers, gene, export, sample){
                           type = "colourScale")
 
     # Export report
-    openxlsx::saveWorkbook(wb, paste(export,"/",sample,"_",gene,"_combined_dt_",
+    openxlsx::saveWorkbook(wb, paste(export,"/",prefix,sample,"_",gene,"_combined_dt_",
                            ".xlsx", sep=""),
                  overwrite = T)
 

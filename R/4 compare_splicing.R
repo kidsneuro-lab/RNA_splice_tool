@@ -21,6 +21,12 @@ if(mode == "default" | mode == "panel"){
       ctrls <- Sample_File$sampleID[which(
         Sample_File$family != Sample_File$family[sample_number]
       )]
+      if(mode == "default"){
+        ctrls <- Sample_File$sampleID[which(
+          Sample_File$family != Sample_File$family[sample_number] &
+          Sample_File$gene != Sample_File$gene[sample_number]
+        )]
+      }
       ctrlscols <- paste0("pct_", ctrls)
       ctrlsreadcols <- paste0("count_", ctrls)
 

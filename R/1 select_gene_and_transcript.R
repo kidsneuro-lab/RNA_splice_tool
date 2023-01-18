@@ -7,7 +7,7 @@
 #' @param genes A character vector of gene names and/or RefSeq transcript IDs
 #'     with version numbers (e.g. NM_004006.2)
 #' @param assembly Assembly used for alignment: either `"hg38"` or `"hg19"`
-#' @param annotation  Annotation used for alignment: either `"UCSC"` or
+#' @param annotation  Annotation used for alignment: either `"UCSC"`or
 #'     `"1000genomes"`
 #'
 #' @returns A list of GRanges for:

@@ -123,6 +123,9 @@ eventAnnotation <- function(query_intron.dt){
                 events[event] <- (paste("exon ",exon_range_start, " ~ ",
                                         "cryptic acceptor", sep="", collapse=""))
             }
+            if (strand == "*"){
+                events[event] <- "cryptic (strand unknown)"
+            }
         }else if (!is.na(exon_range_end)){
             if (strand == "-"){
                 events[event] <- (paste("exon ", exon_range_end, " ~ ",
@@ -132,7 +135,9 @@ eventAnnotation <- function(query_intron.dt){
                 events[event] <- (paste("cryptic donor", " ~ ", "exon ",
                                         exon_range_end+1, sep="", collapse=""))
             }
-
+            if (strand == "*"){
+              events[event] <- "cryptic (strand unknown)"
+            }
             #catching errors
         }else{
             events[event] <- ("unannotated junctions")
