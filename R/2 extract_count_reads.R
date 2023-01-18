@@ -18,8 +18,8 @@
 #' @param sample_names A character vector of sample names. Included in a
 #'     properly formatted cortar samplefile.
 #' @param assembly Assembly used for alignment: either `"hg38"` or `"hg19"`
-#' @param annotation  Annotation used for alignment: either `"UCSC"`,
-#'     `"1000genomes"` or `NCBI`
+#' @param annotation  Annotation used for alignment: either `"UCSC"` or
+#'     `"1000genomes"`
 #' @param paired Is the RNA-seq paired-end?: `TRUE`/`FALSE`
 #' @param stranded Strandedness of the RNA-seq: `0` for unstranded, `1`
 #'     for forward stranded or `2` for reverse stranded

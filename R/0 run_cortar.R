@@ -9,8 +9,8 @@
 #'     readme for more information
 #' @param assembly Assembly used for alignment: either `"hg38"` (default) or
 #'     `"hg19"`
-#' @param annotation  Annotation used for alignment: either `"UCSC"`,
-#'     `"1000genomes"` or `NCBI`
+#' @param annotation  Annotation used for alignment: either `"UCSC"` or
+#'     `"1000genomes"`
 #' @param paired Is the RNA-seq paired-end?: `TRUE`/`FALSE`
 #' @param stranded Strandedness of the RNA-seq: `0` for unstranded, `1`
 #'     for forward stranded or `2` for reverse stranded
@@ -62,8 +62,8 @@ cortar <- function(file,
   }
 
   # annotation
-  if (annotation %nin% c("1000genomes", "UCSC", "NCBI")) {
-    stop("Annotation '", annotation, "' is not an available annotation ('1000genomes','UCSC','NCBI')")
+  if (annotation %nin% c("1000genomes", "UCSC")) {
+    stop("Annotation '", annotation, "' is not an available annotation ('1000genomes','UCSC')")
   }
 
   # paired
@@ -145,6 +145,7 @@ cortar <- function(file,
     bamfiles = file$bamfile,
     sample_names = file$sampleID,
     assembly = assembly,
+    annotation = annotation,
     paired = T,
     stranded = 2
   )
