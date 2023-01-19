@@ -26,7 +26,7 @@ cortar was built in R 4.1.3
 ## Usage
 To use cortar, a samplefile needs to be created for each run. This file
 contains six tab separated columns and a row for each sample (as shown below):
-* sampleID: A unique identifier for the sample
+* sampleID: A unique identifier for the sample (alphanumeric symbols and underscores only)
 * familyID: A unique identifier for related samples that should not be compared
 to one another
 * sampletype: Whether analysis and report is desired for this sample ("test")
