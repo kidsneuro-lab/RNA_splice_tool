@@ -116,7 +116,6 @@ cortar <- function(file,
          Supplied:", names(file))
   }
 
-
   # Select genes and transcripts of interest
   # A genelist must be provided for panel or research mode
   if (mode == "panel" | mode == "research") {

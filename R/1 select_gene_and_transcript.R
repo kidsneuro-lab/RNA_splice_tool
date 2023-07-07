@@ -88,6 +88,7 @@ tx_extraction <- function(genes,
 
 gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_Genes) {
   genes <- Ensembl_Genes[`Gene name` %in% gene_tx$gene_name]
+  rs_genes <- unique(Refseq_Genes[gene_name %in% gene_tx$gene_name, .(gene_name)])
 
   genes.GRanges <- GenomicRanges::GRanges(
     seqnames = genes$`Chromosome/scaffold name`,
@@ -101,6 +102,22 @@ gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_
   if (annotation == "UCSC") {
     GenomeInfoDb::seqlevelsStyle(genes.GRanges) <- "UCSC"
   }
+
+  # output_dir
+  if (nrow(genes) != nrow(rs_genes)) {
+    message("Gene name invalid.
+    Would you like to continue? (Note: This is unlikely to work)
+    \t 1. Yes
+    \t 2. No")
+    selection <- readline(prompt = "Selection: ")
+    if (selection %in% c("1", "Yes", "Y", "yes", "y")) {
+    } else {
+      stop(
+        "Gene name invalid"
+      )
+    }
+  }
+
   return(genes.GRanges)
 }
 
