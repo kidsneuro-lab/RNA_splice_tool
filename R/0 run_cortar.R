@@ -33,6 +33,7 @@ cortar <- function(file,
                    mode = "default",
                    assembly = "hg38",
                    annotation = "UCSC",
+                   input_type = "bamfile",
                    paired = TRUE,
                    stranded = 2,
                    subset = NULL,
@@ -111,7 +112,8 @@ cortar <- function(file,
                             "sampletype",
                             "genes",
                             "transcript",
-                            "bamfile"))) == 0) {
+                            "bamfile",
+                            "sjfile"))) == 0) {
     stop("Samplefile must have correct headers (see readme)
          Supplied:", names(file))
   }
@@ -142,11 +144,13 @@ cortar <- function(file,
     intron_starts.GRanges = genes_tx[[4]][[1]],
     intron_ends.GRanges = genes_tx[[4]][[2]],
     bamfiles = file$bamfile,
+    sjfiles = file$sjfile,
     sample_names = file$sampleID,
     assembly = assembly,
     annotation = annotation,
-    paired = T,
-    stranded = 2
+    paired = paired,
+    stranded = stranded,
+    input = input_type
   )
 
   # Events supported by extracted reads are annotated and quantified
