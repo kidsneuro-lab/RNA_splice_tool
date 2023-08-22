@@ -3,7 +3,7 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
   message("Annotating and quantifying events...")
 
   combined_sj_sorted <- GenomeInfoDb::sortSeqlevels(combined_sj)
-  combined_sj_sorted <- sort(combined_sj)
+  combined_sj_sorted <- sort(combined_sj_sorted)
 
   events_by_intron <- list()
 

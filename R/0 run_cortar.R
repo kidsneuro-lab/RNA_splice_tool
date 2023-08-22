@@ -113,9 +113,18 @@ cortar <- function(file,
                             "genes",
                             "transcript",
                             "bamfile",
-                            "sjfile"))) == 0) {
+                            "sjfile",
+                            "irfile"))) == 0) {
     stop("Samplefile must have correct headers (see readme)
          Supplied:", names(file))
+    for(bamfile in file$bamfile){
+      if(!file.exists(bamfile)){
+        stop(
+          "File does not exist or is non-readable. path = '",
+          bamfile, "'"
+        )
+      }
+    }
   }
 
   # Select genes and transcripts of interest
@@ -145,6 +154,7 @@ cortar <- function(file,
     intron_ends.GRanges = genes_tx[[4]][[2]],
     bamfiles = file$bamfile,
     sjfiles = file$sjfile,
+    irfiles = file$irfile,
     sample_names = file$sampleID,
     assembly = assembly,
     annotation = annotation,
@@ -206,6 +216,7 @@ cortar_batch <- function(folder,
                            mode = "default",
                            assembly = "hg38",
                            annotation = "UCSC",
+                           input_type = "sj",
                            paired = T,
                            stranded = 2,
                            subset = F,
@@ -223,6 +234,7 @@ cortar_batch <- function(folder,
            mode = mode,
            assembly = assembly,
            annotation = annotation,
+           input_type = input_type,
            paired = paired,
            stranded = stranded,
            subset = subset,

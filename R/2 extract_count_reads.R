@@ -46,6 +46,7 @@ extractCountReads <- function(genes.GRanges,
                               intron_ends.GRanges,
                               bamfiles,
                               sjfiles,
+                              irfiles,
                               sample_names,
                               assembly,
                               annotation,
@@ -76,7 +77,7 @@ extractCountReads <- function(genes.GRanges,
     which = genes.GRanges, flag = Rsamtools::scanBamFlag(
       isDuplicate = FALSE,
       isSecondaryAlignment = FALSE,
-      isPaired = paired
+      # isPaired = T
     )
   )
 
@@ -113,7 +114,7 @@ extractCountReads <- function(genes.GRanges,
 
     GenomicRanges::mcols(introns.GRanges)["ir_s"] <- overlaps_intron_starts
     GenomicRanges::mcols(introns.GRanges)["ir_e"] <- overlaps_intron_ends
-    GenomicRanges::mcols(introns.GRanges)["ir"] <- (overlaps_intron_starts + overlaps_intron_ends) / 2
+    GenomicRanges::mcols(introns.GRanges)["ir_score"] <- (overlaps_intron_starts + overlaps_intron_ends) / 2
     ir[[sample_name]] <- introns.GRanges
     sj[[sample_name]] <- GenomicAlignments::summarizeJunctions(alignment, genome = Genome_Assembly)
     BiocGenerics::strand(sj[[sample_name]]) <- GenomicRanges::mcols(sj[[sample_name]])[, "intron_strand"]
@@ -133,7 +134,6 @@ extractCountReads <- function(genes.GRanges,
     alignment[strand == "1", "strand"] <- "+"
     alignment[strand == "0", "strand"] <- "*"
 
-
     alignment.GRanges <- GenomicRanges::GRanges(
       seqnames = alignment$chr,
       IRanges::IRanges(
@@ -145,14 +145,48 @@ extractCountReads <- function(genes.GRanges,
 
     GenomicRanges::mcols(alignment.GRanges)["score"] <- alignment$uniq
 
+    ir_alignment <- fread(irfiles[sample_number])
+    names(ir_alignment) <- c("chr","start","end","name","coverage","strand")
+
+    ir_alignment.GRanges <- GenomicRanges::GRanges(
+      seqnames = ir_alignment$chr,
+      IRanges::IRanges(
+        start = ir_alignment$start + 1,
+        end = ir_alignment$end
+      ),
+      strand = ir_alignment$strand
+    )
+
+    GenomicRanges::mcols(ir_alignment.GRanges)["score"] <- ir_alignment$coverage
+
     qryhits <- GenomicRanges::findOverlaps(alignment.GRanges,
                                            genes.GRanges,
                                            type = "within")
 
-    gene_alignment.GRanges <- alignment.GRanges[S4Vectors::queryHits(qryhits)]
+    ir_starts_qryhits <- GenomicRanges::findOverlaps(ir_alignment.GRanges,
+                                              introns.GRanges,
+                                              type = "start")
 
+    ir_ends_qryhits <- GenomicRanges::findOverlaps(ir_alignment.GRanges,
+                                              introns.GRanges,
+                                              type = "end")
+
+    gene_alignment.GRanges <- alignment.GRanges[S4Vectors::queryHits(qryhits)]
+    gene_ir_starts_alignment.GRanges <- ir_alignment.GRanges[S4Vectors::queryHits(ir_starts_qryhits)]
+    gene_ir_ends_alignment.GRanges <- ir_alignment.GRanges[S4Vectors::queryHits(ir_ends_qryhits)]
+
+    gene_ir_starts_alignment.GRanges <- GenomeInfoDb::sortSeqlevels(gene_ir_starts_alignment.GRanges)
+    gene_ir_ends_alignment.GRanges <- GenomeInfoDb::sortSeqlevels(gene_ir_ends_alignment.GRanges)
+
+    gene_ir_starts_alignment.GRanges <- sort(gene_ir_starts_alignment.GRanges)
+    gene_ir_ends_alignment.GRanges <- sort(gene_ir_ends_alignment.GRanges)
+
+    overlaps_intron_starts <- as.data.table(gene_ir_starts_alignment.GRanges)[,score]
+    overlaps_intron_ends <- as.data.table(gene_ir_ends_alignment.GRanges)[,score]
+    GenomicRanges::mcols(introns.GRanges)["ir_score"] <- (overlaps_intron_starts + overlaps_intron_ends) / 2
 
     sj[[sample_name]] <- gene_alignment.GRanges
+    ir[[sample_name]] <- introns.GRanges
   }
 
 }
@@ -164,9 +198,8 @@ extractCountReads <- function(genes.GRanges,
     "intron_strand"
   )] <- NULL
 
-  if(input == "bamfile"){
     combined_ir <- unique(unlist(GenomicRanges::GRangesList(unlist(ir))))
-    GenomicRanges::mcols(combined_ir)[c("ir", "intron_no", "genes")] <- NULL
+    GenomicRanges::mcols(combined_ir)[c("score", "intron_no", "genes")] <- NULL
 
 
   for (sample_number in 1:length(sample_names)) {
@@ -182,22 +215,10 @@ extractCountReads <- function(genes.GRanges,
     GenomicRanges::mcols(combined_ir)[paste0("count_", sample_name)] <- 0
     qryhits <- GenomicRanges::findOverlaps(ir[[sample_name]], combined_ir, type = "equal")
     GenomicRanges::mcols(combined_ir[S4Vectors::queryHits(qryhits)])[paste0("count_", sample_name)] <-
-      GenomicRanges::mcols(ir[[sample_name]][S4Vectors::queryHits(qryhits)])[, "ir"]
+      GenomicRanges::mcols(ir[[sample_name]][S4Vectors::queryHits(qryhits)])[, "ir_score"]
   }
     combined_sj <- c(combined_sj, combined_ir)
     GenomicRanges::mcols(combined_sj)[c("ir_s", "ir_e")] <- NULL
-
-  }else if(input == "sj"){
-  for (sample_number in 1:length(sample_names)) {
-    sample_name <- sample_names[sample_number]
-
-    GenomicRanges::mcols(combined_sj)$SJ_IR <- "SJ"
-    GenomicRanges::mcols(combined_sj)[paste0("count_", sample_name)] <- 0
-    qryhits <- GenomicRanges::findOverlaps(sj[[sample_name]], combined_sj, type = "equal")
-    GenomicRanges::mcols(combined_sj[S4Vectors::subjectHits(qryhits)])[paste0("count_", sample_name)] <-
-      GenomicRanges::mcols(sj[[sample_name]][S4Vectors::queryHits(qryhits)])[, "score"]
-  }
-  }
 
   message("")
   return(combined_sj)
