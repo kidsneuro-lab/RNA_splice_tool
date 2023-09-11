@@ -108,24 +108,21 @@ cortar <- function(file,
 
   # Read in cortar samplefile
   file <- data.table::fread(file)
-  if (sum((names(file) == c("sampleID",
-                            "familyID",
-                            "sampletype",
-                            "genes",
-                            "transcript",
-                            "bamfile",
-                            "sjfile",
-                            "irfile"))) == 0) {
-    stop("Samplefile must have correct headers (see readme)
-         Supplied:", names(file))
-    for(bamfile in file$bamfile){
-      if(!file.exists(bamfile)){
-        stop(
-          "File does not exist or is non-readable. path = '",
-          bamfile, "'"
-        )
-      }
+  for(bamfile in file$bamfile){
+    if(!file.exists(bamfile)){
+      stop(
+        "File does not exist or is non-readable. path = '",
+        bamfile, "'"
+      )
     }
+  }
+
+  # Select data of interest
+  if (input_type == "bamfile"){
+    file$sjfile <- ""
+    file$irfile <- ""
+  } else if (input_type == "sj"){
+    file$bamfile <- ""
   }
 
   # Select genes and transcripts of interest
