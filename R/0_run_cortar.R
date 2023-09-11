@@ -39,7 +39,8 @@ cortar <- function(file,
                    subset = NULL,
                    output_dir = "~",
                    genelist = NULL,
-                   prefix = "") {
+                   prefix = "",
+                   ria = F) {
   # Error catching
   # file
   if (!file.exists(file)) {
@@ -170,7 +171,8 @@ cortar <- function(file,
     introns.GRanges = genes_tx[[2]][[1]],
     introns_other_tx.GRanges = genes_tx[[3]],
     introns = genes_tx[[2]][[2]],
-    assembly = assembly
+    assembly = assembly,
+    ria = ria
   )
 
   # Comparisons of events between test samples and controls are performed
@@ -222,7 +224,8 @@ cortar_batch <- function(folder,
                            subset = F,
                            output_dir = "~",
                            genelist = NULL,
-                           prefix = ""){
+                           prefix = "",
+                           ria = T){
   batches_in <- sapply(list.files(folder, pattern = pattern),function(x){paste0(folder,"/",x)})
   batches_out <- sapply(list.files(folder, pattern = pattern),function(x){paste0(output_dir,"/",strsplit(x,"\\.")[[1]][1])})
   for(batch in seq(1,length(batches_in))){
@@ -240,7 +243,8 @@ cortar_batch <- function(folder,
            subset = subset,
            output_dir = batches_out[batch],
            genelist = genelist,
-           prefix = prefix)
+           prefix = prefix,
+           ria = ria)
   }
 }
 
