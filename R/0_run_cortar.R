@@ -33,12 +33,14 @@ cortar <- function(file,
                    mode = "default",
                    assembly = "hg38",
                    annotation = "UCSC",
+                   input_type = "bamfile",
                    paired = TRUE,
                    stranded = 2,
                    subset = NULL,
                    output_dir = "~",
                    genelist = NULL,
-                   prefix = "") {
+                   prefix = "",
+                   ria = F) {
   # Error catching
   # file
   if (!file.exists(file)) {
@@ -106,16 +108,22 @@ cortar <- function(file,
 
   # Read in cortar samplefile
   file <- data.table::fread(file)
-  if (sum((names(file) == c("sampleID",
-                            "familyID",
-                            "sampletype",
-                            "genes",
-                            "transcript",
-                            "bamfile"))) == 0) {
-    stop("Samplefile must have correct headers (see readme)
-         Supplied:", names(file))
+  for(bamfile in file$bamfile){
+    if(!file.exists(bamfile)){
+      stop(
+        "File does not exist or is non-readable. path = '",
+        bamfile, "'"
+      )
+    }
   }
 
+  # Select data of interest
+  if (input_type == "bamfile"){
+    file$sjfile <- ""
+    file$irfile <- ""
+  } else if (input_type == "sj"){
+    file$bamfile <- ""
+  }
 
   # Select genes and transcripts of interest
   # A genelist must be provided for panel or research mode
@@ -143,11 +151,14 @@ cortar <- function(file,
     intron_starts.GRanges = genes_tx[[4]][[1]],
     intron_ends.GRanges = genes_tx[[4]][[2]],
     bamfiles = file$bamfile,
+    sjfiles = file$sjfile,
+    irfiles = file$irfile,
     sample_names = file$sampleID,
     assembly = assembly,
     annotation = annotation,
-    paired = T,
-    stranded = 2
+    paired = paired,
+    stranded = stranded,
+    input = input_type
   )
 
   # Events supported by extracted reads are annotated and quantified
@@ -157,7 +168,8 @@ cortar <- function(file,
     introns.GRanges = genes_tx[[2]][[1]],
     introns_other_tx.GRanges = genes_tx[[3]],
     introns = genes_tx[[2]][[2]],
-    assembly = assembly
+    assembly = assembly,
+    ria = ria
   )
 
   # Comparisons of events between test samples and controls are performed
@@ -203,12 +215,14 @@ cortar_batch <- function(folder,
                            mode = "default",
                            assembly = "hg38",
                            annotation = "UCSC",
+                           input_type = "sj",
                            paired = T,
                            stranded = 2,
                            subset = F,
                            output_dir = "~",
                            genelist = NULL,
-                           prefix = ""){
+                           prefix = "",
+                           ria = T){
   batches_in <- sapply(list.files(folder, pattern = pattern),function(x){paste0(folder,"/",x)})
   batches_out <- sapply(list.files(folder, pattern = pattern),function(x){paste0(output_dir,"/",strsplit(x,"\\.")[[1]][1])})
   for(batch in seq(1,length(batches_in))){
@@ -220,12 +234,14 @@ cortar_batch <- function(folder,
            mode = mode,
            assembly = assembly,
            annotation = annotation,
+           input_type = input_type,
            paired = paired,
            stranded = stranded,
            subset = subset,
            output_dir = batches_out[batch],
            genelist = genelist,
-           prefix = prefix)
+           prefix = prefix,
+           ria = ria)
   }
 }
 

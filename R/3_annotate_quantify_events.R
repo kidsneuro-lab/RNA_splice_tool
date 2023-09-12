@@ -1,9 +1,9 @@
-annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_other_tx.GRanges, introns, assembly) {
+annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_other_tx.GRanges, introns, assembly, ria) {
 
   message("Annotating and quantifying events...")
 
   combined_sj_sorted <- GenomeInfoDb::sortSeqlevels(combined_sj)
-  combined_sj_sorted <- sort(combined_sj)
+  combined_sj_sorted <- sort(combined_sj_sorted)
 
   events_by_intron <- list()
 
@@ -20,6 +20,15 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
       combined_sj_sorted[S4Vectors::subjectHits(qryhits_start)],
       combined_sj_sorted[S4Vectors::subjectHits(qryhits_end)]
     )
+
+    # Include reads in absentia
+    if(ria == T){
+      qryhits_within <- GenomicRanges::findOverlaps(introns.GRanges[query_intron], combined_sj_sorted, type = "within")
+      query_intron.GRanges <- c(
+        query_intron.GRanges,
+        combined_sj_sorted[S4Vectors::subjectHits(qryhits_within)]
+      )
+    }
 
     # Identify the non-canonical splicing junctions
     GenomicRanges::mcols(query_intron.GRanges)$"intron_jxn_start" <- NA
