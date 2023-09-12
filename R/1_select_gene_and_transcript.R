@@ -76,10 +76,21 @@ tx_extraction <- function(genes,
   for (gene in seq(1, length(genes))) {
     if (length(grep("NM_[0-9]+\\.[0-9]+", genes[gene])) > 0) {
       tx <- stringr::str_extract_all(genes[gene], "NM_[0-9]+\\.[0-9]+")[[1]][1]
-      gene_name <- unique(refseq_assembly[tx_version_id == tx & region_type == c("intron"), "gene_name"])[[1]]
-    } else {
+      if(tx %in% refseq_assembly[,tx_version_id]){
+        gene_name <- unique(refseq_assembly[tx_version_id == tx & region_type == c("intron"), "gene_name"])[[1]]
+      } else {
+        stop(paste0("Transcript identifier `",tx,"` is invalid"))
+      }
+    } else if (length(grep("[A-Za-z0-9]{3,10}", genes[gene])) > 0){
       gene_name <- genes[gene]
-      tx <- unique(refseq_assembly[gene_name == genes[gene] & canonical == 1, "tx_version_id"])[[1]]
+      if(genes[gene] %in% refseq_assembly[,gene_name]){
+        tx <- unique(refseq_assembly[gene_name == genes[gene] & canonical == 1, "tx_version_id"])[[1]]
+      } else {
+        stop(paste0("Gene name `",genes[gene],"` is invalid"))
+      }
+    } else {
+      gene_name <- NULL
+      tx <- NULL
     }
     genes_tx <- rbind(genes_tx, data.table("gene_name" = gene_name, "tx" = tx))
   }
