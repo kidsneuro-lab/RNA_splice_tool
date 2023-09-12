@@ -1,6 +1,4 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
 # cortar 
 
 <!-- badges: start -->
@@ -22,6 +20,7 @@ devtools::install_github("kidsneuro-lab/RNA_splice_tool")
 ```
 
 cortar was built in R 4.1.3
+
 
 ## Usage
 To use cortar, a samplefile needs to be created for each run. This file
@@ -45,6 +44,8 @@ the canonical RefSeq transcript)
 #> mother_4    4		       NF1	  NM_001042492     Z:/path/to/bamfile/mother_4.bam
 #> proband_5   5	  test         COL2A1	  NM_001844	   Z:/path/to/bamfile/proband_5.bam
 ```
+
+Please note. By default cortar will not compare any samples with the same gene/transcript to avoid comparing samples where the same gene is affected. For control samples, put another valid gene name and transcript number in the appropriate columns. This will be addressed in an upcoming fix.
 
 After creating a samplefile, cortar can be run using the `cortar()` function as follows:
 
