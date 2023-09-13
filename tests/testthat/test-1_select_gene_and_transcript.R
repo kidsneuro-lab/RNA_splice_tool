@@ -3,8 +3,8 @@ library(testthat)
 # TX_EXTRACTION ---------------------------------------------------------------
 
 # Mock assembly data based on provided refseq_introns_exons_hg38 data
-load(testthat::test_path("refseq_intron_exons_hg38_mock.rda"))
-refseq_mock <- refseq_intron_exons_hg38_mock
+load(test_path("refseq_introns_exons_hg38_mock.rda"))
+refseq_mock <- refseq_introns_exons_hg38_mock
 
 # Mock gene data
 mock_genes <- c("EMD", "COL2A1")
