@@ -32,9 +32,9 @@ generate_sample_metadata <- function(sampleID,
 
 }
 
-create_new_samplefile <- function(db, metadata, age_of_biopsy_range, sex_matched = F, output = ""){
+create_new_samplefile <- function(db_path, metadata, age_of_biopsy_range, sex_matched = F, output = ""){
 
-  db <- fread(db)
+  db <- fread(db_path)
 
   paths <- generate_paths(metadata)
 
@@ -60,8 +60,8 @@ generate_paths <- function(metadata){
 }
 
 select_controls <- function(db, metadata, age_of_biopsy_range, sex_matched){
-  db_subset_incl_excl <- db[(age_of_biopsy > metadata$age_of_biopsy - age_of_biopsy_range) &
-                            (age_of_biopsy < metadata$age_of_biopsy + age_of_biopsy_range) &
+  db_subset_incl_excl <- db[(age_of_biopsy > as.numeric(metadata$age_of_biopsy) - age_of_biopsy_range) &
+                            (age_of_biopsy < as.numeric(metadata$age_of_biopsy) + age_of_biopsy_range) &
                              assembly == metadata$assembly &
                              RNAseq == metadata$RNAseq &
                              tissue == metadata$tissue &
@@ -83,7 +83,7 @@ select_controls <- function(db, metadata, age_of_biopsy_range, sex_matched){
 generate_samplefile <- function(db_subset, metadata, paths, use.db.paths = T){
 
   test_sample <- data.table(sampleID = metadata$sampleID,
-                            familyID = metadata$sampleID,
+                            familyID = metadata$familyID,
                             sampletype = "test",
                             genes = metadata$gene,
                             bamfile = paths[["bam"]],
@@ -110,7 +110,7 @@ generate_samplefile <- function(db_subset, metadata, paths, use.db.paths = T){
 
 export_samplefile <- function(samplefile, output){
 
-  fwrite(samplefile, output)
+  fwrite(samplefile, output, sep = "\t")
 
 }
 
