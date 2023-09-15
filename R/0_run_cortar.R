@@ -294,9 +294,9 @@ subsetBamfiles <- function(genes, hg, overhang = 1000){
   subsetgenes <- Ensembl_Genes[`Gene name` %in% genes_tx$gene_name]
 
   # Format gene input
-  forsubset <- paste0("\'","\'","chr",subsetgenes$`Chromosome/scaffold name`,":",subsetgenes$`Gene start (bp)`-overhang,"-",
-                      subsetgenes$`Gene end (bp)`+overhang,"\'","\'")
-  forsubset <- paste(forsubset,collapse=" ")
+  forsubset <- paste0("  - \"'","\'","chr",subsetgenes$`Chromosome/scaffold name`,":",subsetgenes$`Gene start (bp)`-overhang,"-",
+                      subsetgenes$`Gene end (bp)`+overhang,"\'","'\"")
+  forsubset <- paste(forsubset,collapse="\n")
 
-  return(forsubset)
+  cat(forsubset)
 }
