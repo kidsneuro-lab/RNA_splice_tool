@@ -14,9 +14,9 @@ metadata <- data.table(sampleID = "AC" ,
                        tissue = "pbmcs",
                        chx_dmso = "chx")
 
-db_path <- "/Volumes/PRJ-GDT/NGS_data/AGRF/GRCh38/RNASeq/KNC_RNAseq_sample_database.txt"
+db_path <- "/Volumes/research-data/PRJ-GDT/NGS_data/AGRF/GRCh38/RNASeq/KNC_RNAseq_sample_database.txt"
 
-db <- fread("/Volumes/PRJ-GDT/NGS_data/AGRF/GRCh38/RNASeq/KNC_RNAseq_sample_database.txt")
+db <- fread("/Volumes/research-data/PRJ-GDT/NGS_data/AGRF/GRCh38/RNASeq/KNC_RNAseq_sample_database.txt")
 
 
 #Integration Test -------------------------------------------------------------

@@ -38,7 +38,7 @@ create_new_samplefile <- function(db_path, metadata, age_of_biopsy_range, sex_ma
 
   paths <- generate_paths(metadata)
 
-  db_subset <- select_controls(db, metadata, age_of_biopsy_range = 100, sex_matched = F)
+  db_subset <- select_controls(db, metadata, age_of_biopsy_range, sex_matched)
 
   samplefile <- generate_samplefile(db_subset, metadata, paths)
 
