@@ -40,7 +40,9 @@ cortar <- function(file,
                    output_dir = "~",
                    genelist = NULL,
                    prefix = "",
+                   debug = F,
                    ria = F) {
+
   # Error catching
   # file
   if (!file.exists(file)) {
@@ -94,7 +96,6 @@ cortar <- function(file,
     }
   }
 
-
   # Initialisation messages
   message(paste0("Running cortar "))
   message(paste0("        file: ", file))
@@ -117,6 +118,17 @@ cortar <- function(file,
     }
   }
 
+  # Initialise debug directory
+  if(debug == T){
+    debug <- paste0(output_dir,"debug")
+    message(paste0("RUNNING IN DEBUG MODE! All output will be saved to: '", debug,"'"))
+    message("")
+    if(!dir.exists(debug)){
+      dir.create(debug)
+    }
+    fwrite(as.data.table(file),paste0(debug,"/","0_samplefile.tsv"), sep = "\t")
+  }
+
   # Select data of interest
   if (input_type == "bamfile"){
     file$sjfile <- ""
@@ -131,7 +143,8 @@ cortar <- function(file,
     genes_tx <- selectGenesTranscripts(
       genes = genelist,
       assembly = assembly,
-      annotation = annotation
+      annotation = annotation,
+      debug = debug
     )
   }
 
@@ -140,7 +153,8 @@ cortar <- function(file,
     genes_tx <- selectGenesTranscripts(
       genes = file$genes,
       assembly = assembly,
-      annotation = annotation
+      annotation = annotation,
+      debug = debug
     )
   }
 
@@ -158,7 +172,8 @@ cortar <- function(file,
     annotation = annotation,
     paired = paired,
     stranded = stranded,
-    input = input_type
+    input = input_type,
+    debug = debug
   )
 
   # Events supported by extracted reads are annotated and quantified
@@ -169,6 +184,7 @@ cortar <- function(file,
     introns_other_tx.GRanges = genes_tx[[3]],
     introns = genes_tx[[2]][[2]],
     assembly = assembly,
+    debug = debug,
     ria = ria
   )
 
@@ -176,7 +192,8 @@ cortar <- function(file,
   comparisons <- compareSplicing(
     all_splicing_events = events,
     Sample_File = file,
-    mode = mode
+    mode = mode,
+    debug = debug
   )
 
   # Reports in excel and pdf formats are generated for comparisons
@@ -185,7 +202,8 @@ cortar <- function(file,
     Sample_File = file,
     Export = output_dir,
     mode = mode,
-    prefix = prefix
+    prefix = prefix,
+    debug = debug
   )
 
   # Termination message
@@ -222,6 +240,7 @@ cortar_batch <- function(folder,
                            output_dir = "~",
                            genelist = NULL,
                            prefix = "",
+                           debug = debug,
                            ria = T){
   batches_in <- sapply(list.files(folder, pattern = pattern),function(x){paste0(folder,"/",x)})
   batches_out <- sapply(list.files(folder, pattern = pattern),function(x){paste0(output_dir,"/",strsplit(x,"\\.")[[1]][1])})
@@ -241,6 +260,7 @@ cortar_batch <- function(folder,
            output_dir = batches_out[batch],
            genelist = genelist,
            prefix = prefix,
+           debug = debug,
            ria = ria)
   }
 }

@@ -1,4 +1,4 @@
-generateReport <- function(comparisons, Sample_File, Export, mode, prefix) {
+generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug) {
     message("Generating reports...")
 
   if(mode == "default" | mode == "panel"){
