@@ -1,0 +1,12 @@
+sampleID	sampleID	familyID	sampletype	genes	coverage	transcript	bamfile_6bp_csj	sjfile	irfile
+558_COL5A2_P_C	disease_control_1	1		GAPDH		NM_001289746	/path/to/bamfile/disease_control_1.bam	/path/to/sjfile/disease_control_1.SJ.tab.out	/path/to/irfile/disease_control_1.intron.coverage.bed
+497_COL4A2_P_C	disease_control_2	2		GAPDH		NM_001289746	/path/to/bamfile/disease_control_2.bam	/path/to/sjfile/disease_control_2.SJ.tab.out	/path/to/irfile/disease_control_2.intron.coverage.bed
+443_COL4A5_P_C	test_sample_1	3	test	COL4A5	20	NM_033380	/path/to/bamfile/test_sample_1.bam	/path/to/sjfile/test_sample_1.SJ.tab.out	/path/to/irfile/test_sample_1.intron.coverage.bed
+family_sample_1	family_sample_1	3		COL4A5		NM_001289746	/path/to/bamfile/family_sample_1.bam	/path/to/sjfile/family_sample_1.SJ.tab.out	/path/to/irfile/family_sample_1.intron.coverage.bed
+455_POGZ_P_C	disease_control_4	4		GAPDH		NM_001289746	/path/to/bamfile/disease_control_4.bam	/path/to/sjfile/disease_control_4.SJ.tab.out	/path/to/irfile/disease_control_4.intron.coverage.bed
+388_FGF13_M_C	disease_control_5	5		GAPDH		NM_001289746	/path/to/bamfile/disease_control_5.bam	/path/to/sjfile/disease_control_5.SJ.tab.out	/path/to/irfile/disease_control_5.intron.coverage.bed
+331_GLI3_P_C	disease_control_6	6		GAPDH		NM_001289746	/path/to/bamfile/disease_control_6.bam	/path/to/sjfile/disease_control_6.SJ.tab.out	/path/to/irfile/disease_control_6.intron.coverage.bed
+AlCo_PHF_CHX	disease_control_7	7		GAPDH		NM_001289746	/path/to/bamfile/disease_control_7.bam	/path/to/sjfile/disease_control_7.SJ.tab.out	/path/to/irfile/disease_control_7.intron.coverage.bed
+422_POMT2_P_C	disease_control_8	8		GAPDH		NM_001289746	/path/to/bamfile/disease_control_8.bam	/path/to/sjfile/disease_control_8.SJ.tab.out	/path/to/irfile/disease_control_8.intron.coverage.bed
+99_PRPH2_P_C	test_sample_2	9	test	GAPDH		NM_001289746	/path/to/bamfile/test_sample_2.bam	/path/to/sjfile/test_sample_2.SJ.tab.out	/path/to/irfile/test_sample_2.intron.coverage.bed
+291_NEU1_P_C	family_sample_2	9		GAPDH		NM_001289746	/path/to/bamfile/family_sample_2.bam	/path/to/sjfile/family_sample_2.SJ.tab.out	/path/to/irfile/family_sample_2.intron.coverage.bed

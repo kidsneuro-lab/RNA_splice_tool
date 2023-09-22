@@ -5,9 +5,11 @@ compareSplicing <- function(all_splicing_events, Sample_File, mode, debug) {
 if(mode == "default" | mode == "panel"){
   #--Compare splicing between test and controls and Generate Report--------------
   for (sample_number in seq(1, nrow(Sample_File))) {
+
     # Initialise new copy of the all_splicing_events dataset
     all_splicing_events_sample <- all_splicing_events
     if (Sample_File$sampletype[sample_number] == "test"){
+
       # Identify columns for the proband and family members
       proband <- Sample_File$sampleID[sample_number]
       family <- Sample_File$sampleID[which(
