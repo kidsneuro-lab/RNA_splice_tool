@@ -223,7 +223,7 @@ extractCountReads <- function(genes.GRanges,
 
   message("")
 
-  if(debug != ""){
+  if(debug != "" | debug == FALSE){
     fwrite(as.data.table(combined_sj),paste0(debug,"/","6_combined_sj.tsv"), sep = "\t")
   }
 

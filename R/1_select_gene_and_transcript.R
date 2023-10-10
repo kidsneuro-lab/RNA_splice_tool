@@ -97,7 +97,7 @@ tx_extraction <- function(genes,
     genes_tx <- rbind(genes_tx, data.table("gene_name" = gene_name, "tx" = tx))
   }
 
-  if(debug != ""){
+  if(debug != "" | debug == FALSE){
     fwrite(as.data.table(genes_tx),paste0(debug,"/","1_tx_extraction.tsv"), sep = "\t")
   }
 
@@ -136,7 +136,7 @@ gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_
     }
   }
 
-  if(debug != ""){
+  if(debug != "" | debug == FALSE){
     fwrite(as.data.table(genes.GRanges),paste0(debug,"/","2_gene_to_GRange.tsv"), sep = "\t")
   }
 
@@ -162,7 +162,7 @@ introns_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug
     GenomeInfoDb::seqlevelsStyle(introns.GRanges) <- "UCSC"
   }
 
-  if(debug != ""){
+  if(debug != "" | debug == FALSE){
     fwrite(as.data.table(introns.GRanges),paste0(debug,"/","3_introns_to_GRange_GRanges.tsv"), sep = "\t")
     fwrite(as.data.table(introns),paste0(debug,"/","3_introns_to_GRange_introns.tsv"), sep = "\t")
   }
@@ -194,7 +194,7 @@ introns_other_tx_to_GRange <- function(genes, gene_tx, assembly, annotation, Ref
     GenomeInfoDb::seqlevelsStyle(introns.GRanges) <- "UCSC"
   }
 
-  if(debug != ""){
+  if(debug != "" | debug == FALSE){
     fwrite(as.data.table(introns.GRanges),paste0(debug,"/","4_introns_other_tx_to_GRange.tsv"), sep = "\t")
   }
 
@@ -227,7 +227,7 @@ introns_jx_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, de
     GenomeInfoDb::seqlevelsStyle(intron_ends.GRanges) <- "UCSC"
   }
 
-  if(debug != ""){
+  if(debug != "" | debug == FALSE){
     fwrite(as.data.table(intron_starts.GRanges),paste0(debug,"/","5_introns_jx_to_GRange_starts.tsv"), sep = "\t")
     fwrite(as.data.table(intron_ends.GRanges),paste0(debug,"/","5_introns_jx_to_GRange_ends.tsv"), sep = "\t")
   }

@@ -92,7 +92,7 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
 
   message("")
 
-  if(debug != ""){
+  if(debug != "" | debug == FALSE){
     fwrite(as.data.table(all_splicing_events),paste0(debug,"/","7_all_splicing_events.tsv"), sep = "\t")
   }
 
