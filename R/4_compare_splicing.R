@@ -184,7 +184,7 @@ if(mode == "default" | mode == "panel"){
   }
   message("")
 
-  if(debug != ""){
+  if(debug != "" | debug == FALSE){
     fwrite(as.data.table(comparisons),paste0(debug,"/","8_comparisons.tsv"), sep = "\t")
   }
 

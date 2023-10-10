@@ -127,6 +127,8 @@ cortar <- function(file,
       dir.create(debug)
     }
     fwrite(as.data.table(file),paste0(debug,"/","0_samplefile.tsv"), sep = "\t")
+  }else{
+    debug <- ""
   }
 
   # Select data of interest
