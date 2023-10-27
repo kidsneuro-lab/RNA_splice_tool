@@ -300,3 +300,24 @@ subsetBamfiles <- function(genes, hg, overhang = 1000){
 
   cat(forsubset)
 }
+
+
+run_cortar_test <- function(test_path = getwd()){
+  extdata_path <- system.file("extdata", package="cortar")
+
+  # Check if the folder exists
+  if (!dir.exists(extdata_path)) {
+    stop("The specified folder does not exist in the package.")
+  }
+
+  dest_path <- paste0(test_path,"/cortar_test")
+
+  dir.create(dest_path, showWarnings = T, recursive = T)
+  dir.create(paste0(dest_path,"/output"), showWarnings = T, recursive = T)
+  file.copy(from = extdata_path, to = dest_path, recursive = T)
+
+  cortar::cortar(paste0(dest_path,"/extdata/test_samplefile.tsv"),
+         input_type = "bamfile",
+         output_dir = paste0(dest_path,"/output"))
+
+}

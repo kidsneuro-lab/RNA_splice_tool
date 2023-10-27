@@ -1,0 +1,4 @@
+sampleID	familyID	sampletype	genes	transcript	bamfile	sjfile	irfile	coverage
+test_sample	1	test	LEMD3	NM_014319	test_sample.bam			0
+test_control_1	2		GAPDH	NM_001289746	test_control_1.bam			
+test_control_2	3		GAPDH	NM_001289746	test_control_2.bam			

@@ -6,3 +6,4 @@ output/*
 src/*
 data-raw/*
 inst/*.R*
+*/.DS_Store
