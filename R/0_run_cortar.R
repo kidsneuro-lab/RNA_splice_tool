@@ -302,6 +302,23 @@ subsetBamfiles <- function(genes, hg, overhang = 1000){
 }
 
 
+#' Run the cortar test
+#'
+#' This function runs a test for the `cortar` package by copying the necessary files from the
+#' package's extdata directory to a specified test directory. After copying, it processes a sample
+#' TSV file and then calls the `cortar` function.
+#'
+#' @param test_path Character string indicating the path to the directory where the test will run.
+#'   By default, it uses the current working directory (`getwd()`).
+#'
+#' @return None. The function will perform the tests and modify files, but does not return any values.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' run_cortar_test("/path/to/your/test/directory")
+#' }
+
 run_cortar_test <- function(test_path = getwd()){
   extdata_path <- system.file("extdata", package="cortar")
 
