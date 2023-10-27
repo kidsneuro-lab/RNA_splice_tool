@@ -316,6 +316,12 @@ run_cortar_test <- function(test_path = getwd()){
   dir.create(paste0(dest_path,"/output"), showWarnings = T, recursive = T)
   file.copy(from = extdata_path, to = dest_path, recursive = T)
 
+  test_samplefile.tsv <- fread(paste0(dest_path,"/extdata/test_samplefile.tsv"))
+
+  test_samplefile.tsv$bamfile <- paste0(dest_path,"/extdata/",test_samplefile.tsv$bamfile)
+
+  fwrite(test_samplefile.tsv, paste0(dest_path,"/extdata/test_samplefile.tsv"), sep = "\t")
+
   cortar::cortar(paste0(dest_path,"/extdata/test_samplefile.tsv"),
          input_type = "bamfile",
          output_dir = paste0(dest_path,"/output"))
