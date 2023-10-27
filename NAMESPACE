@@ -3,6 +3,7 @@
 export(cortar)
 export(cortar_batch)
 export(extractCountReads)
+export(run_cortar_test)
 export(selectGenesTranscripts)
 export(subsetBamfiles)
 export(tx_extraction)
