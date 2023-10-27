@@ -15,12 +15,33 @@ You can install the development version of cortar from
 [GitHub](https://github.com/) with: 
 
 ``` r
+#install dependencies
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("GenomicRanges")
+BiocManager::install("GenomicFeatures")
+BiocManager::install("GenomicAlignments")
+BiocManager::install("BSgenome.Hsapiens.UCSC.hg38")
+BiocManager::install("BSgenome.Hsapiens.UCSC.hg19")
+BiocManager::install("BSgenome.Hsapiens.1000genomes.hs37d5")
+
 # install.packages("devtools")
 devtools::install_github("kidsneuro-lab/RNA_splice_tool")
 ```
 
 cortar was built in R 4.1.3
 
+## Quickstart
+``` r
+#load cortar library
+library(cortar)
+
+#run test dataset in directory (defaults to current working directory)
+run_cortar_test()
+
+#check <directory>/cortar_test/output for reports
+```
 
 ## Usage
 To use cortar, a samplefile needs to be created for each run. This file
