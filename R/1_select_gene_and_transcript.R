@@ -127,6 +127,8 @@ gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_
     Would you like to continue? (Note: This is unlikely to work)
     \t 1. Yes
     \t 2. No")
+    print(genes)
+    print(rs_genes)
     selection <- readline(prompt = "Selection: ")
     if (selection %in% c("1", "Yes", "Y", "yes", "y")) {
     } else {
