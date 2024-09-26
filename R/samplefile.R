@@ -1,7 +1,7 @@
 # Load data on startup
 pool <- pool::dbPool(
   drv = RSQLite::SQLite(),
-  dbname = "/Volumes/research-data/PRJ-GDT/NGS_data/KNC_RNASeq_samples.sqlite3"
+  dbname = "/Volumes/research-data/PRJ-GDT/NGS_data/KNC_RNAseq_samples.sqlite3"
 )
 
 # example: get_all_sample_ids(pool, "AGRF", "pbmcs","dmso")
@@ -80,11 +80,11 @@ make_samplefile <- function(pool, sample, sexMatch = F, ageMatch = F, includeUns
 # example:
 get_bamfiles <- function(samplefile, folder, append = T, run = "_var1_6bp", suffix = ".sorted.subset.bam", csj = T, force = F){
   if(csj == F){
-    #bamfiles <- apply(samplefile$samplefile, 1, function(x) paste0(folder,"/",x['sampleID'],"/",x['sampleID'],run,"/",x['sampleID'],run,suffix))
-    bamfiles <- apply(samplefile$samplefile, 1, function(x) paste0(folder,"/",x['sampleID'],run,suffix))
+    bamfiles <- apply(samplefile$samplefile, 1, function(x) paste0(folder,"/",x['sampleID'],"/",x['sampleID'],run,"/",x['sampleID'],run,suffix))
+    #bamfiles <- apply(samplefile$samplefile, 1, function(x) paste0(folder,"/",x['sampleID'],run,suffix))
   } else {
     samplefile$samplefile$csj[samplefile$samplefile$csj == "NA"] <- ""
-    bamfiles <- apply(samplefile$samplefile, 1, function(x) paste0(folder,"/",x['sampleID'],"/",x['sampleID'],run,x['csj'],"/",x['sampleID'],x['csj'],run,suffix))
+    bamfiles <- apply(samplefile$samplefile, 1, function(x) paste0(folder,"/",x['sampleID'],"/",x['sampleID'],run,x['csj'],"/",x['sampleID'],run,x['csj'],suffix))
   }
   missing_files <- sapply(bamfiles, file.exists) == FALSE
 
@@ -131,6 +131,13 @@ create_samplefile <- function(pool, sample, folder, output_dir, csj = F, sexMatc
   final
 }
 
-#get_all_sample_ids(pool)
+# get_all_sample_ids(pool)
 
-#create_samplefile(pool, "609_NF1_P", "/Volumes/research-data/PRJ-GDT/NGS_data/Rhett/alignments/results", "../test/")
+# create_samplefile(pool, "609_NF1_P", "/Volumes/research-data/PRJ-GDT/NGS_data/Rhett/alignments/results", "../test/")
+
+# create_samplefile(
+#   pool,
+#   "422_POMT2_P_D",
+#   "/Volumes/research-data/PRJ-GDT/NGS_data/AGRF/GRCh38/Alignments",
+#   "/Volumes/research-data/PRJ-GDT/NGS_data/Rhett/NMD_ASO_Targets"
+# )
