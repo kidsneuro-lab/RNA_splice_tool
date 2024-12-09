@@ -8,7 +8,7 @@ BASE_DIR=`dirname "$0"`
 
 # Function to display usage information
 usage() {
-    echo "Usage: $0 --genes <gene1,gene2,...> --assembly <37|38> --cramfiles <path/to/cramfiles.txt> --ref-fasta <path/to/reference.fa> --output <path/to/output_directory>"
+    echo "Usage: $0 --genes <gene1,gene2,...> --assembly <37|38> --cramfiles <path/to/cramfiles.txt> --ref-fasta <path/to/reference.fa> --output <path/to/output_directory> [--temp-dir <path/to/temp_directory>]"
     echo
     echo "Options:"
     echo "  -g, --genes        Comma-separated list of genes (e.g., EMD,DMD) [required]"
@@ -16,12 +16,13 @@ usage() {
     echo "  -c, --cramfiles    Full path to cramfiles.txt containing CRAM file paths [required]"
     echo "  -r, --ref-fasta    Full path to the reference FASTA file (e.g., hg38.fa) [required]"
     echo "  -o, --output       Output directory path where subsetted BAM files will be copied [required]"
+    echo "  -t, --temp-dir     Temporary directory path for processing [optional]"
     echo "  -h, --help         Display this help message"
     exit 1
 }
 
 # Parse command-line arguments using getopt
-ARGS=$(getopt -o g:a:c:r:o:h --long genes:,assembly:,cramfiles:,ref-fasta:,output:,help -n "$0" -- "$@")
+ARGS=$(getopt -o g:a:c:r:o:t:h --long genes:,assembly:,cramfiles:,ref-fasta:,output:,temp-dir:,help -n "$0" -- "$@")
 if [ $? -ne 0 ]; then
     usage
 fi
@@ -34,6 +35,7 @@ ASSEMBLY=""
 CRAMFILES=""
 REF_FASTA=""
 OUTPUT_DIR=""
+TEMP_DIR=""   ### MODIFICATION ###
 
 # Extract options and their arguments into variables
 while true; do
@@ -56,6 +58,10 @@ while true; do
             ;;
         -o|--output)
             OUTPUT_DIR="$2"
+            shift 2
+            ;;
+        -t|--temp-dir)   ### MODIFICATION ###
+            TEMP_DIR="$2"
             shift 2
             ;;
         -h|--help)
@@ -106,9 +112,19 @@ if [[ ! -d "$OUTPUT_DIR" ]]; then
     fi
 fi
 
-# Create temporary directory for processing
-TEMP_DIR="./temp"
+### MODIFICATION ###
+# Set temporary directory, if not specified default to ./temp
+if [[ -z "$TEMP_DIR" ]]; then
+    TEMP_DIR="./temp"
+fi
+
+# Create temporary directory if it doesn't exist
 mkdir -p "$TEMP_DIR"
+if [[ $? -ne 0 ]]; then
+    echo "Error: Failed to create temporary directory '$TEMP_DIR'."
+    exit 1
+fi
+### END MODIFICATION ###
 
 # Obtain gene coordinates by executing get_genes_coords.R
 echo "Obtaining gene coordinates..."
@@ -136,6 +152,7 @@ for CRAM in $(cat "$CRAMFILES"); do
     # Check if CRAM file exists
     if [[ ! -f "$CRAM" ]]; then
         echo "Error: CRAM file '$CRAM' does not exist. Exiting."
+        IFS="$OIFS"
         exit 1
     fi
 
