@@ -1,7 +1,7 @@
 #Load Mock Data ---------------------------------------------------------------
-mock_splicing_events <- fread("tests/testthat/mock_all_splicing_events.tsv")
+mock_splicing_events <- fread("mock_all_splicing_events.tsv")
 
-mock_Sample_File <- fread("tests/testthat/mock_samplefile.tsv")
+mock_Sample_File <- fread("mock_samplefile.tsv")
 
 #Integration Test -------------------------------------------------------------
 test_that("compareSplicing returns correct results for mock data", {

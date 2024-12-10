@@ -267,25 +267,64 @@ cortar_batch <- function(folder,
   }
 }
 
-#' Extract gene coordinates for RNA-seq subsetting
+#' Subset BAM Files Based on Gene Annotations
 #'
-#' Returns the gene coordinates for a given entrez_gene_symbol or
-#' RefSeq/Ensembl transcript to be used for RNA-seq subsetting
+#' The `subsetBamfiles` function retrieves and formats genomic ranges for specified genes
+#' based on the chosen genome assembly (hg19 or hg38). It supports gene names, Ensembl gene IDs,
+#' and transcript IDs (RefSeq). The function adjusts the genomic coordinates by a specified
+#' overhang and outputs the formatted ranges as strings.
 #'
-#' @param genes A character vector with the entrez_gene_symbols,
-#' RefSeq transcript ids, or Ensembl gene or transcript ids for the genes for
-#' analysis.
-#' @param hg Either 19 or 38
-#' @param overhang Number of nucleotides flanking the gene to be included
-#' (default: 1000nt)
+#' @param genes A character vector of gene identifiers. This can include:
+#'   \itemize{
+#'     \item Gene names (e.g., `"EMD"`, `"DMD"`)
+#'     \item Ensembl gene IDs (e.g., `"ENSG00000231514"`)
+#'     \item Transcript IDs (e.g., `"NM_XXXXXX"`)
+#'   }
+#' @param hg An integer specifying the genome assembly version. Supported values are `19` (hg19) and `38` (hg38).
+#' @param overhang A numeric value indicating the number of base pairs to subtract from the start position
+#'   and add to the end position of each genomic range. Default is `1000`.
 #'
-#' @return A character vector.
-#' @export
+#' @return The function outputs formatted genomic range strings to the console using `cat()`.
+#'   Each range is formatted as:
+#'   \code{  - "''chr<chrom>:<start>-<end>''"}
 #'
 #' @examples
-#' == COMING SOON==
+#' \dontrun{
+#' # Example 1: Obtaining genomic ranges for multiple genes based on gene names
+#' subsetBamfiles(genes = c('EMD', 'DMD'), hg = 38, overhang = 0)
+#' # Output:
+#' #   - "''chrX:154379567-154380881''"
+#' #   - "''chrX:31121931-33211281''"
 #'
-
+#' # Example 2: Obtaining genomic ranges for a single gene based on gene name
+#' subsetBamfiles(genes = c('MPP5'), hg = 38, overhang = 0)
+#' # Output:
+#' #   - "''chr14:67240713-67336061''"
+#'
+#' # Example 3: Obtaining genomic ranges based on Ensembl gene ID
+#' subsetBamfiles(genes = c('ENSG00000231514'), hg = 38, overhang = 0)
+#' # Output:
+#' #   - "''chrY:26626520-26627159''"
+#'
+#' # Example 4: Throwing an error if gene is not found
+#' subsetBamfiles(genes = c('NOT_FOUND'), hg = 38, overhang = 0)
+#' # Error:
+#' # [NOT_FOUND] not found in Ensembl or Refseq. Please check input values.
+#' }
+#'
+#' @details
+#' The function processes each gene identifier to determine its corresponding genomic coordinates.
+#' It handles different types of identifiers by checking against RefSeq and Ensembl gene annotations.
+#' If a gene cannot be located in either annotation set, the function will terminate and throw an error.
+#'
+#' The `overhang` parameter allows users to extend or reduce the genomic range boundaries,
+#' which can be useful for including additional upstream or downstream regions.
+#'
+#' @seealso
+#' \code{\link[testthat]{test_that}}, \code{\link[data.table]{data.table}}
+#'
+#' @import data.table
+#' @export
 subsetBamfiles <- function(genes, hg, overhang = 1000){
 
   # Read in cortar samplefile
@@ -300,27 +339,69 @@ subsetBamfiles <- function(genes, hg, overhang = 1000){
     Ensembl_Genes <- ensembl_allgenes_chr1_Y_hg19
   }
 
-  genes_tx <- data.table("gene_name" = character(), "tx" = character())
+  # First check if the gene can be located in
 
-  for (gene in seq(1, length(genes))) {
-    if (length(grep("NM_[0-9]+\\.[0-9]+", genes[gene])) > 0) {
-      tx <- stringr::str_extract_all(genes[gene], "NM_[0-9]+\\.[0-9]+")[[1]][1]
-      gene_name <- unique(Refseq_Genes[tx_version_id == tx & region_type == c("intron"), "gene_name"])[[1]]
-    } else {
-      gene_name <- genes[gene]
-      tx <- unique(Refseq_Genes[gene_name == genes[gene] & canonical == 1, "tx_version_id"])[[1]]
-    }
-    genes_tx <- rbind(genes_tx, data.table("gene_name" = gene_name, "tx" = tx))
+  gene_coordinates <- list()
+
+  for (gene_counter in seq(1, length(genes))) {
+    gene <- genes[gene_counter]
+
+    if (grepl("^ENSG", gene)) {
+      result <- Ensembl_Genes[`Gene stable ID` == gene,
+                              .(chrom = `Chromosome/scaffold name`,
+                                start = `Gene start (bp)`,
+                                end = `Gene end (bp)`)]
+      gene_coordinates[[gene]] <- as.list(result)
+
+    } else if (grepl("^NM_", gene) || grepl("^ENST", gene)) {
+      tx <- gsub(pattern = "\\.\\d+$", "", gene)
+      result <- Refseq_Genes[tx_id == tx & region_type == 'intron' & (region_no==1 | last_region==1)][order(ifelse(strand == '+', last_region, -last_region))]
+      result_list <- as.list(result[,.(start = min(region_start),
+                                       end = max(region_end)), by = .(chrom)])
+      gene_coordinates[[gene]] <- result_list
+
+    } else if (gene %in% Refseq_Genes$gene_name) {
+      result <- Refseq_Genes[gene_name == gene & canonical == 1 & region_type == 'intron' & (region_no==1 | last_region==1)][order(ifelse(strand == '+', last_region, -last_region))]
+      result_list <- as.list(result[,.(start = min(region_start),
+                                       end = max(region_end)), by = .(chrom)])
+
+      gene_coordinates[[gene]] <- result_list
+
+    } else if (gene %in% Ensembl_Genes$`Gene name`) {
+      result <- Ensembl_Genes[`Gene name` == gene,
+                              .(chrom = `Chromosome/scaffold name`,
+                                start = `Gene start (bp)`,
+                                end = `Gene end (bp)`)]
+      gene_coordinates[[gene]] <- as.list(result)
+
+    } else (
+      stop(paste0("[", gene, "] not found in Ensembl or Refseq. Please check input values."))
+    )
   }
 
-  subsetgenes <- Ensembl_Genes[`Gene name` %in% genes_tx$gene_name]
+  updated_gene_coordinates <- lapply(gene_coordinates, function(sublist) {
+    # Append 'chr' to the chrom value. Ensure MT chromosome formatting is correct
+    sublist$chrom <- ifelse(paste0("chr", sublist$chrom) == 'chrMT', 'chrM', paste0("chr", sublist$chrom))
 
-  # Format gene input
-  forsubset <- paste0("  - \"'","\'","chr",subsetgenes$`Chromosome/scaffold name`,":",subsetgenes$`Gene start (bp)`-overhang,"-",
-                      subsetgenes$`Gene end (bp)`+overhang,"\'","'\"")
-  forsubset <- paste(forsubset,collapse="\n")
+    # Subtract overhang from the start position
+    sublist$start <- sublist$start - overhang
 
-  cat(forsubset)
+    # Add overhang to the end position
+    sublist$end <- sublist$end + overhang
+
+    # Return the modified sublist
+    return(sublist)
+  })
+
+  formatted_gene_coords <- sapply(updated_gene_coordinates, function(sublist) {
+    # Create the formatted string with double single quotes
+    formatted_string <- paste0("  - ", '"', "''", sublist$chrom, ":", sublist$start, "-", sublist$end, "''", '"')
+    return(formatted_string)
+  })
+
+  formatted_gene_coords <- unname(formatted_gene_coords)
+
+  cat(paste(formatted_gene_coords, collapse = "\n"))
 }
 
 
