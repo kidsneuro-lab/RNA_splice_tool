@@ -148,7 +148,7 @@ IFS=$'\n'
 echo "Starting subsetting of CRAM files..."
 for CRAM in $(cat "$CRAMFILES"); do
     echo "Subsetting $CRAM"
-
+    
     # Check if CRAM file exists
     if [[ ! -f "$CRAM" ]]; then
         echo "Error: CRAM file '$CRAM' does not exist. Exiting."
@@ -158,55 +158,59 @@ for CRAM in $(cat "$CRAMFILES"); do
 
     PREFIX=$(basename "$CRAM" .cram)
     echo "Processing prefix: $PREFIX"
-
-    # Define temporary and final BAM file paths
-    TMP_BAM="$TEMP_DIR/tmp_${PREFIX}_subset.bam"
-    FINAL_BAM="$TEMP_DIR/${PREFIX}_subset.bam"
-
-    echo Executing: samtools view -b -o "$TMP_BAM" -T "$REF_FASTA" "$CRAM" $GENE_COORDS
-
-    # Subset the CRAM file using samtools view
-    cat $TEMP_DIR/regions.txt | xargs -I {} samtools view \
-        -@ 4 \
-        -b \
-        -o "$TMP_BAM" \
-        -T "$REF_FASTA" \
-        "$CRAM" {}
-
-    # Check if samtools view was successful
-    if [[ $? -ne 0 ]]; then
-        echo "Error: samtools view failed for '$CRAM'."
-        IFS="$OIFS"
-        exit 1
+    
+    if [[ -f "$OUTPUT_DIR/${PREFIX}_subset.bam" ]]; then
+echo "$OUTPUT_DIR/${PREFIX}_subset.bam already exists. Skipping..."
+    else
+        # Define temporary and final BAM file paths
+        TMP_BAM="$TEMP_DIR/tmp_${PREFIX}_subset.bam"
+        FINAL_BAM="$TEMP_DIR/${PREFIX}_subset.bam"
+    
+        echo Executing: samtools view -b -o "$TMP_BAM" -T "$REF_FASTA" "$CRAM" $GENE_COORDS
+    
+        # Subset the CRAM file using samtools view
+        cat $TEMP_DIR/regions.txt | xargs -I {} samtools view \
+            -@ 4 \
+            -b \
+            -o "$TMP_BAM" \
+            -T "$REF_FASTA" \
+            "$CRAM" {}
+    
+        # Check if samtools view was successful
+        if [[ $? -ne 0 ]]; then
+            echo "Error: samtools view failed for '$CRAM'."
+            IFS="$OIFS"
+            exit 1
+        fi
+    
+        # Sort the subset BAM file
+        samtools sort \
+            -@ 4 \
+            -O bam \
+            -o "$FINAL_BAM" "$TMP_BAM"
+    
+        # Check if samtools sort was successful
+        if [[ $? -ne 0 ]]; then
+            echo "Error: samtools sort failed for '$TMP_BAM'."
+            IFS="$OIFS"
+            exit 1
+        fi
+    
+        # Index the sorted BAM file
+        samtools index "$FINAL_BAM"
+    
+        # Check if samtools index was successful
+        if [[ $? -ne 0 ]]; then
+            echo "Error: samtools index failed for '$FINAL_BAM'."
+            IFS="$OIFS"
+            exit 1
+        fi
+    
+        # Remove temporary BAM file
+        rm "$TMP_BAM"
+    
+        echo "Successfully subsetted '$CRAM' to '$FINAL_BAM'."
     fi
-
-    # Sort the subset BAM file
-    samtools sort \
-        -@ 4 \
-        -O bam \
-        -o "$FINAL_BAM" "$TMP_BAM"
-
-    # Check if samtools sort was successful
-    if [[ $? -ne 0 ]]; then
-        echo "Error: samtools sort failed for '$TMP_BAM'."
-        IFS="$OIFS"
-        exit 1
-    fi
-
-    # Index the sorted BAM file
-    samtools index "$FINAL_BAM"
-
-    # Check if samtools index was successful
-    if [[ $? -ne 0 ]]; then
-        echo "Error: samtools index failed for '$FINAL_BAM'."
-        IFS="$OIFS"
-        exit 1
-    fi
-
-    # Remove temporary BAM file
-    rm "$TMP_BAM"
-
-    echo "Successfully subsetted '$CRAM' to '$FINAL_BAM'."
 done
 
 IFS="$OIFS"
