@@ -1,3 +1,10 @@
+# TO-DO
+- Add Dockerfile
+- Add one E2E test (0 exit code)
+- Set up CI/CD
+- Set up AWS project for it
+- Create Singularity image on GADI
+
 # cortar 
 
 <!-- badges: start -->
