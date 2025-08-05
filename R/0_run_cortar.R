@@ -41,7 +41,8 @@ cortar <- function(file,
                    genelist = NULL,
                    prefix = "",
                    debug = F,
-                   ria = F) {
+                   ria = T) {
+                   # reads in absentia - count multi-exon skipping as an event for a skipped intron
 
   # Error catching
   # file
