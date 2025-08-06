@@ -1,0 +1,5 @@
+sampleID	familyID	sampletype	genes	transcript	bamfile	coverage
+sample1_EMD	sample1	test	EMD	NM_000117.3	data/input/sample1_EMD.bam	1
+sample2_EMD	sample2				data/input/sample2_EMD.bam	1
+sample3_EMD	sample3				data/input/sample3_EMD.bam	1
+sample4_EMD	sample4				data/input/sample4_EMD.bam	1
