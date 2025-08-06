@@ -1,5 +1,34 @@
 {
-    "name": "R Project",
-    "dockerFile": "Dockerfile",
-    "mounts": ["source=/Volumes/research-data/PRJ-GDT,target=/Volumes/research-data/PRJ-GDT,type=bind,consistency=cached"]
-  }
+  "name": "RNA Splice Tool",
+  "build": {
+    "context": "..",
+    "dockerfile": "../Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": true,
+			"configureZshAsDefaultShell": true,
+			"installOhMyZsh": true
+		},
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    }
+  },
+  "mounts": [
+		"type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/root/.ssh,readonly"
+	],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "REditorSupport.r",
+        "RDebugger.r-debugger",
+        "Ikuyadeu.r-lsp",
+        "mechatroner.rainbow-csv",
+        "Gruntfuggly.todo-tree",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  },
+  "postCreateCommand": "./.devcontainer/init.sh",
+  "remoteUser": "root"
+}

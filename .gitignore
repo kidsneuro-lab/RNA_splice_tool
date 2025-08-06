@@ -6,3 +6,4 @@ output/*
 src/*
 data-raw/*
 **/.DS_Store
+tests/.DS_Store
