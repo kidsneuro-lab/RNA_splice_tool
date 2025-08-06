@@ -1,0 +1,28 @@
+name: pull_request
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - .devcontainer/**
+      - .vscode/**
+      - docs/**
+      - README.md
+      - LICENSE
+      - .giitignore
+      - .github/workflows/**
+
+jobs:
+    build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build docker image
+        run: docker build -t rna_splice_tool .
+
+      - name: Run tests
+        run: |
+          docker run --rm rna_splice_tool Rscript -e "devtools::test()"
