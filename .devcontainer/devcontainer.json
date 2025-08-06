@@ -25,7 +25,8 @@
         "Ikuyadeu.r-lsp",
         "mechatroner.rainbow-csv",
         "Gruntfuggly.todo-tree",
-        "yzhang.markdown-all-in-one"
+        "yzhang.markdown-all-in-one",
+        "github.vscode-github-actions"
       ]
     }
   },
