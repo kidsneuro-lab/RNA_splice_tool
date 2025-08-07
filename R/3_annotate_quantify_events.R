@@ -1,4 +1,4 @@
-annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_other_tx.GRanges, introns, assembly, ria) {
+annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_other_tx.GRanges, introns, assembly, debug, ria) {
 
   message("Annotating and quantifying events...")
 
@@ -91,6 +91,11 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
   all_splicing_events <- data.table::rbindlist(events_by_intron)
 
   message("")
+
+  if(debug != "" | debug == FALSE){
+    fwrite(as.data.table(all_splicing_events),paste0(debug,"/","7_all_splicing_events.tsv"), sep = "\t")
+  }
+
   return(all_splicing_events)
 }
 

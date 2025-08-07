@@ -22,7 +22,8 @@
 #'
 selectGenesTranscripts <- function(genes,
                                    assembly,
-                                   annotation) {
+                                   annotation,
+                                   debug = "") {
   # Initialisation message
   message("Selecting genes and transcripts...")
   message("")
@@ -35,11 +36,11 @@ selectGenesTranscripts <- function(genes,
     Ensembl_Genes <- ensembl_allgenes_chr1_Y_hg19
   }
 
-  gene_tx <- tx_extraction(genes, Refseq_Genes)
-  genes.GRanges <- gene_to_GRange(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_Genes)
-  introns.GRanges <- introns_to_GRange(gene_tx, assembly, annotation, Refseq_Genes)
-  introns_other_tx.GRanges <- introns_other_tx_to_GRange(genes, gene_tx, assembly, annotation, Refseq_Genes)
-  introns_jx.GRanges <- introns_jx_to_GRange(gene_tx, assembly, annotation, Refseq_Genes)
+  gene_tx <- tx_extraction(genes, Refseq_Genes, debug)
+  genes.GRanges <- gene_to_GRange(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_Genes, debug)
+  introns.GRanges <- introns_to_GRange(gene_tx, assembly, annotation, Refseq_Genes, debug)
+  introns_other_tx.GRanges <- introns_other_tx_to_GRange(genes, gene_tx, assembly, annotation, Refseq_Genes, debug)
+  introns_jx.GRanges <- introns_jx_to_GRange(gene_tx, assembly, annotation, Refseq_Genes, debug)
 
   return(list(
     genes.GRanges,
@@ -70,7 +71,8 @@ selectGenesTranscripts <- function(genes,
 #' #### == COMING SOON == ####
 #'
 tx_extraction <- function(genes,
-                          refseq_assembly = refseq_introns_exons_hg38) {
+                          refseq_assembly = refseq_introns_exons_hg38,
+                          debug = "") {
   genes_tx <- data.table("gene_name" = character(), "tx" = character())
 
   for (gene in seq(1, length(genes))) {
@@ -94,10 +96,15 @@ tx_extraction <- function(genes,
     }
     genes_tx <- rbind(genes_tx, data.table("gene_name" = gene_name, "tx" = tx))
   }
+
+  if(debug != "" | debug == FALSE){
+    fwrite(as.data.table(genes_tx),paste0(debug,"/","1_tx_extraction.tsv"), sep = "\t")
+  }
+
   return(as.data.table(genes_tx))
 }
 
-gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_Genes) {
+gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_Genes, debug = "") {
   genes <- Ensembl_Genes[`Gene name` %in% gene_tx$gene_name]
   rs_genes <- unique(Refseq_Genes[gene_name %in% gene_tx$gene_name, .(gene_name)])
 
@@ -120,6 +127,8 @@ gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_
     Would you like to continue? (Note: This is unlikely to work)
     \t 1. Yes
     \t 2. No")
+    print(genes)
+    print(rs_genes)
     selection <- readline(prompt = "Selection: ")
     if (selection %in% c("1", "Yes", "Y", "yes", "y")) {
     } else {
@@ -129,10 +138,14 @@ gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_
     }
   }
 
+  if(debug != "" | debug == FALSE){
+    fwrite(as.data.table(genes.GRanges),paste0(debug,"/","2_gene_to_GRange.tsv"), sep = "\t")
+  }
+
   return(genes.GRanges)
 }
 
-introns_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes) {
+introns_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug = "") {
   introns <- Refseq_Genes[tx_version_id %in% gene_tx$tx & region_type == c("intron")]
 
   introns.GRanges <- GenomicRanges::GRanges(
@@ -150,10 +163,16 @@ introns_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes) {
   if (annotation == "UCSC") {
     GenomeInfoDb::seqlevelsStyle(introns.GRanges) <- "UCSC"
   }
+
+  if(debug != "" | debug == FALSE){
+    fwrite(as.data.table(introns.GRanges),paste0(debug,"/","3_introns_to_GRange_GRanges.tsv"), sep = "\t")
+    fwrite(as.data.table(introns),paste0(debug,"/","3_introns_to_GRange_introns.tsv"), sep = "\t")
+  }
+
   return(list(introns.GRanges, introns))
 }
 
-introns_other_tx_to_GRange <- function(genes, gene_tx, assembly, annotation, Refseq_Genes) {
+introns_other_tx_to_GRange <- function(genes, gene_tx, assembly, annotation, Refseq_Genes, debug = "") {
   introns <- Refseq_Genes[
     gene_name %in% unlist(genes) &
       tx_version_id %nin% gene_tx$tx &
@@ -176,10 +195,15 @@ introns_other_tx_to_GRange <- function(genes, gene_tx, assembly, annotation, Ref
   if (annotation == "UCSC") {
     GenomeInfoDb::seqlevelsStyle(introns.GRanges) <- "UCSC"
   }
+
+  if(debug != "" | debug == FALSE){
+    fwrite(as.data.table(introns.GRanges),paste0(debug,"/","4_introns_other_tx_to_GRange.tsv"), sep = "\t")
+  }
+
   return(introns.GRanges)
 }
 
-introns_jx_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes) {
+introns_jx_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug = "") {
   introns <- Refseq_Genes[tx_version_id %in% gene_tx$tx & region_type == c("intron")]
 
   intron_starts.GRanges <- GenomicRanges::GRanges(
@@ -203,6 +227,11 @@ introns_jx_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes) {
   if (annotation == "UCSC") {
     GenomeInfoDb::seqlevelsStyle(intron_starts.GRanges) <- "UCSC"
     GenomeInfoDb::seqlevelsStyle(intron_ends.GRanges) <- "UCSC"
+  }
+
+  if(debug != "" | debug == FALSE){
+    fwrite(as.data.table(intron_starts.GRanges),paste0(debug,"/","5_introns_jx_to_GRange_starts.tsv"), sep = "\t")
+    fwrite(as.data.table(intron_ends.GRanges),paste0(debug,"/","5_introns_jx_to_GRange_ends.tsv"), sep = "\t")
   }
 
   return(list(intron_starts.GRanges, intron_ends.GRanges))

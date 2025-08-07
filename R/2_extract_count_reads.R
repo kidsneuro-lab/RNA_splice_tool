@@ -52,7 +52,8 @@ extractCountReads <- function(genes.GRanges,
                               annotation,
                               paired,
                               stranded,
-                              input) {
+                              input,
+                              debug) {
   message("Extracting and counting reads...")
 
   if (assembly == "hg19") {
@@ -221,5 +222,10 @@ extractCountReads <- function(genes.GRanges,
     GenomicRanges::mcols(combined_sj)[c("ir_s", "ir_e")] <- NULL
 
   message("")
+
+  if(debug != "" | debug == FALSE){
+    fwrite(as.data.table(combined_sj),paste0(debug,"/","6_combined_sj.tsv"), sep = "\t")
+  }
+
   return(combined_sj)
 }

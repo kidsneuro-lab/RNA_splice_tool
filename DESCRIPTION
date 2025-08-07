@@ -30,5 +30,6 @@ Imports:
     BSgenome.Hsapiens.1000genomes.hs37d5,
     magrittr,
     openxlsx,
-    formattable
+    formattable,
+    optparse
 LazyData: true
