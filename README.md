@@ -1,9 +1,10 @@
+[![create_release](https://github.com/kidsneuro-lab/RNA_splice_tool/actions/workflows/create_release.yml/badge.svg?branch=main)](https://github.com/kidsneuro-lab/RNA_splice_tool/actions/workflows/create_release.yml)
+
 # TO-DO
-- Add Dockerfile
-- Add one E2E test (0 exit code)
-- Set up CI/CD
-- Set up AWS project for it
-- Create Singularity image on GADI
+- ✅ Add Dockerfile 
+- ✅ Add one E2E test (0 exit code)
+- ✅ Set up CI/CD
+- Update README and instructions
 
 # cortar 
 
