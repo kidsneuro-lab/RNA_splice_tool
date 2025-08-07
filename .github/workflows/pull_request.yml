@@ -32,7 +32,7 @@ jobs:
           tags: rna_splice_tool
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          
+
       - name: Run tests
         run: |
-          docker run --rm rna_splice_tool Rscript -e "devtools::test()"
+          docker run --entrypoint Rscript --rm rna_splice_tool -e "devtools::test()"
