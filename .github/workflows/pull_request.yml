@@ -36,3 +36,7 @@ jobs:
       - name: Run tests
         run: |
           docker run --entrypoint Rscript --rm rna_splice_tool -e "devtools::test()"
+
+      - name: Check samtools installation
+        run: |
+          docker run --entrypoint samtools --rm rna_splice_tool --version
