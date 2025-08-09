@@ -39,4 +39,4 @@ jobs:
 
       - name: Check samtools installation
         run: |
-          docker run --entrypoint samtools --rm rna_splice_tool --version"
+          docker run --entrypoint samtools --rm rna_splice_tool --version
