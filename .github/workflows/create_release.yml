@@ -24,7 +24,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and cache
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: false
@@ -65,7 +65,7 @@ jobs:
           TAG_LATEST: latest
           TAG_SEMVER: ${{ steps.create_version.outputs.tag }}
           TAG_SHA: ${{ github.sha }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
