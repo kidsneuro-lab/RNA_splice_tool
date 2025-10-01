@@ -40,3 +40,7 @@ jobs:
       - name: Check samtools installation
         run: |
           docker run --entrypoint samtools --rm rna_splice_tool --version
+
+      - name: Check docker cli via docker
+        run: |
+          docker run --rm -v $(pwd)/tests:/tests rna_splice_tool -f /tests/testthat/data/input/samples_dockertest.tsv -o /tmp -r TRUE
