@@ -30,7 +30,7 @@ option_list <- list(
   make_option(c("-s", "--stranded"),   type="integer", default=2, help="Strandedness (0,1,2) [default: %default]"),
   make_option(c("-u", "--subset"),     type="character", default=NULL, help="Comma-separated subset list [default: %default]"),
   make_option(c("-o", "--output_dir"), type="character", default="~", help="Output directory [default: %default]"),
-  make_option(c("-g", "--genelist"),   type="character", default=NULL, help="Path to genelist [default: %default]"),
+  make_option(c("-g", "--genelist"),   type="character", default=NULL, help="Comma-separated genes (no spaces) [default: %default]"),
   make_option(c("-x", "--prefix"),     type="character", default="", help="Output prefix [default: %default]"),
   make_option(c("-d", "--debug"),      type="logical", default=FALSE, help="Debug TRUE/FALSE [default: %default]"),
   make_option(c("-r", "--ria"),        type="logical", default=FALSE, help="Reads in absentia TRUE/FALSE [default: %default]")
@@ -48,11 +48,14 @@ if (is.null(opts$file) || opts$file == "") {
 to_null <- function(x) if (is.null(x) || (is.character(x) && x == "")) NULL else x
 opts$genelist <- to_null(opts$genelist)
 
-if (!is.null(opts$subset) && nzchar(opts$subset)) {
-  items <- trimws(unlist(strsplit(opts$subset, ",")))
-  opts$subset <- if (length(items)) items else NULL
+# Parse --genelist (comma-delimited -> character vector)
+if (!is.null(opts$genelist) && nzchar(opts$genelist)) {
+  genes <- trimws(unlist(strsplit(opts$genelist, ",")))
+  # Drop any empty strings defensively
+  genes <- genes[nzchar(genes)]
+  opts$genelist <- if (length(genes)) genes else NULL
 } else {
-  opts$subset <- NULL
+  opts$genelist <- NULL
 }
 
 opts$paired <- as.logical(opts$paired)
@@ -76,7 +79,7 @@ params <- list(
   stranded   = opts$stranded,
   subset     = if (is.null(opts$subset)) "NULL" else paste(opts$subset, collapse = ","),
   output_dir = opts$output_dir,
-  genelist   = if (is.null(opts$genelist)) "NULL" else opts$genelist,
+  genelist   = if (is.null(opts$genelist)) "NULL" else paste(opts$genelist, collapse = ","),
   prefix     = opts$prefix,
   debug      = opts$debug,
   ria        = opts$ria
@@ -101,7 +104,7 @@ res <- tryCatch({
     stranded    = opts$stranded,
     subset      = opts$subset,
     output_dir  = opts$output_dir,
-    genelist    = opts$genelist,
+    genelist    = opts$genelist,  # now a character vector
     prefix      = opts$prefix,
     debug       = opts$debug,
     ria         = opts$ria
