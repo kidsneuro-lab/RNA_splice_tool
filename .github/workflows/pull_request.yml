@@ -41,6 +41,10 @@ jobs:
         run: |
           docker run --entrypoint samtools --rm rna_splice_tool --version
 
-      - name: Check docker cli via docker
+      - name: Check docker cli via docker (default mode)
         run: |
-          docker run --rm -v $(pwd)/tests:/tests rna_splice_tool -f /tests/testthat/data/input/samples_dockertest.tsv -o /tmp -r TRUE
+          docker run --rm -v $(pwd)/tests:/tests rna_splice_tool -f /tests/testthat/data/input/samples_default_dockertest.tsv -o /tmp -r TRUE
+
+      - name: Check docker cli via docker (research mode)
+        run: |
+          docker run --rm -v $(pwd)/tests:/tests rna_splice_tool -f tests/testthat/data/input/samples_research_dockertest.tsv -m research -g EMD,DMD -o /tmp
