@@ -396,11 +396,9 @@ subsetBamfiles <- function(genes, hg, overhang = 1000){
 
   formatted_gene_coords <- sapply(updated_gene_coordinates, function(sublist) {
     # Create the formatted string with double single quotes
-    formatted_string <- paste0("  - ", '"', "''", sublist$chrom, ":", sublist$start, "-", sublist$end, "''", '"')
+    formatted_string <- sprintf("%s\t%d\t%d", sublist$chrom, sublist$start - 1, sublist$end) # Subtract 1 from start for BED coordinates
     return(formatted_string)
   })
-
-  formatted_gene_coords <- unname(formatted_gene_coords)
 
   cat(paste(formatted_gene_coords, collapse = "\n"))
 }
