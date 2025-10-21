@@ -3,6 +3,7 @@
 # Load necessary library
 suppressPackageStartupMessages(library(cortar))
 suppressPackageStartupMessages(library(optparse))
+suppressPackageStartupMessages(library(futile.logger))
 
 # Define command-line options
 option_list <- list(
@@ -35,18 +36,17 @@ if (is.null(opts$hg)) {
 # Split genes into a vector
 genes <- unlist(strsplit(opts$genes, split = ","))
 
-# Call the subsetBamfiles function
 regions <- capture.output(subsetBamfiles(genes = genes, hg = opts$hg, overhang = opts$overhang))
 
 # Reformat regions into a format accepted by samtools
 reformatted_regions <- list()
 
 for (region in regions) {
-  reformatted_regions[[region]] <- gsub(".+(chr\\w+):(\\d+)-(\\d+).+", "\\1:\\2-\\3", region)
+  reformatted_regions[[region]] <- region
 }
 
 # Format each region with double single quotes
-output <- paste(lapply(reformatted_regions, function(x) { return(paste0("", x, "")) }), 
+output <- paste(lapply(reformatted_regions, function(x) { return(paste0("", x, "")) }),
                 collapse = '\n')
 
 # Print the output
