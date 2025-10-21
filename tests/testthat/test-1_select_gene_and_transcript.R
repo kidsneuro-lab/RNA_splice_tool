@@ -69,28 +69,28 @@ test_that("tx_extraction handles different assemblies", {
 
 test_that("Obtaining genomic ranges for genes (based on gene name)", {
   result <- capture.output(subsetBamfiles(genes = c('EMD','DMD'), hg = 38, overhang = 0))
-  expect_equal(result[[1]], "  - \"''chrX:154379567-154380881''\"")
-  expect_equal(result[[2]], "  - \"''chrX:31121931-33211281''\"")
+  expect_equal(result[[1]], "chrX\t154379566\t154380881")
+  expect_equal(result[[2]], "chrX\t31121930\t33211281")
 })
 
 test_that("Obtaining genomic ranges for genes (based on gene name)", {
   result <- capture.output(subsetBamfiles(genes = c('MPP5'), hg = 38, overhang = 0))
-  expect_equal(result[[1]], "  - \"''chr14:67240713-67336061''\"")
+  expect_equal(result[[1]], "chr14\t67240712\t67336061")
 })
 
 test_that("Obtaining genomic ranges for genes (with 1 bp overhang)", {
   result <- capture.output(subsetBamfiles(genes = c('MPP5'), hg = 38, overhang = 1))
-  expect_equal(result[[1]], "  - \"''chr14:67240712-67336062''\"")
+  expect_equal(result[[1]], "chr14\t67240711\t67336062")
 })
 
 test_that("Obtaining genomic ranges for genes (based on Ensembl gene ID)", {
   result <- capture.output(subsetBamfiles(genes = c('ENSG00000231514'), hg = 38, overhang = 0))
-  expect_equal(result[[1]], "  - \"''chrY:26626520-26627159''\"")
+  expect_equal(result[[1]], "chrY\t26626519\t26627159")
 })
 
 test_that("Obtaining genomic ranges for genes (based on Refseq transcript ID)", {
   result <- capture.output(subsetBamfiles(genes = c('NM_001002761.1'), hg = 38, overhang = 0))
-  expect_equal(result[[1]], "  - \"''chrY:25031223-25052073''\"")
+  expect_equal(result[[1]], "chrY\t25031222\t25052073")
 })
 
 test_that("Throwing error if gene is not found", {
