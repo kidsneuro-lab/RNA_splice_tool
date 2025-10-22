@@ -72,7 +72,7 @@ cortar <- function(file,
   }
 
   # paired
-  if (class(paired) != "logical") {
+  if (!is.logical(paired)) {
     stop("Paired must be a logical: TRUE, FALSE.
          Supplied:", paired, "
          Note: You may need to remove quotation marks.")
@@ -129,7 +129,7 @@ cortar <- function(file,
     }
     fwrite(as.data.table(file),paste0(debug,"/","0_samplefile.tsv"), sep = "\t")
   }else{
-    debug <- ""
+    debug <- FALSE
   }
 
   # Select data of interest

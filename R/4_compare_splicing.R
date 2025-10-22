@@ -1,3 +1,17 @@
+#' Compare Splicing Between Samples
+#'
+#' Internal function that performs statistical comparisons of splicing events
+#' between test samples and controls. Calculates differences, standard deviations,
+#' and identifies unique events.
+#'
+#' @param all_splicing_events Data.table containing all annotated splicing events
+#' @param Sample_File Data.table with sample metadata (from cortar samplefile)
+#' @param mode Analysis mode: "default", "panel", or "research"
+#' @param debug Debug parameter (path or FALSE)
+#'
+#' @return A list of comparison results (one per test sample) or a single
+#'   data.table for research mode
+#' @keywords internal
 compareSplicing <- function(all_splicing_events, Sample_File, mode, debug) {
     message("Comparing samples...")
     comparisons <- list()
@@ -184,7 +198,7 @@ if(mode == "default" | mode == "panel"){
   }
   message("")
 
-  if(debug != "" | debug == FALSE){
+  if(is_debug_enabled(debug)){
     fwrite(as.data.table(comparisons),paste0(debug,"/","8_comparisons.tsv"), sep = "\t")
   }
 

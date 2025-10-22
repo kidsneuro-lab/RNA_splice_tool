@@ -97,14 +97,28 @@ tx_extraction <- function(genes,
     genes_tx <- rbind(genes_tx, data.table("gene_name" = gene_name, "tx" = tx))
   }
 
-  if(debug != "" | debug == FALSE){
+  if(is_debug_enabled(debug)){
     fwrite(as.data.table(genes_tx),paste0(debug,"/","1_tx_extraction.tsv"), sep = "\t")
   }
 
   return(as.data.table(genes_tx))
 }
 
-gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_Genes, debug = "") {
+#' Convert Gene Information to GRanges Object
+#'
+#' Internal helper function that converts gene information into a GRanges object
+#' using Ensembl gene annotations.
+#'
+#' @param gene_tx A data.table with gene_name and tx columns
+#' @param assembly Genome assembly version ("hg38" or "hg19")
+#' @param annotation Annotation type ("UCSC" or "1000genomes")
+#' @param Refseq_Genes RefSeq gene annotation data
+#' @param Ensembl_Genes Ensembl gene annotation data
+#' @param debug Debug parameter (path or FALSE)
+#'
+#' @return A GRanges object with gene coordinates
+#' @keywords internal
+gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_Genes, debug = FALSE) {
   genes <- Ensembl_Genes[`Gene name` %in% gene_tx$gene_name]
   rs_genes <- unique(Refseq_Genes[gene_name %in% gene_tx$gene_name, .(gene_name)])
 
@@ -138,14 +152,26 @@ gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_
     }
   }
 
-  if(debug != "" | debug == FALSE){
+  if(is_debug_enabled(debug)){
     fwrite(as.data.table(genes.GRanges),paste0(debug,"/","2_gene_to_GRange.tsv"), sep = "\t")
   }
 
   return(genes.GRanges)
 }
 
-introns_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug = "") {
+#' Convert Intron Information to GRanges Object
+#'
+#' Internal helper function that converts intron information into a GRanges object.
+#'
+#' @param gene_tx A data.table with gene_name and tx columns
+#' @param assembly Genome assembly version ("hg38" or "hg19")
+#' @param annotation Annotation type ("UCSC" or "1000genomes")
+#' @param Refseq_Genes RefSeq gene annotation data
+#' @param debug Debug parameter (path or FALSE)
+#'
+#' @return A list containing: GRanges object with intron coordinates and the introns data.table
+#' @keywords internal
+introns_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug = FALSE) {
   introns <- Refseq_Genes[tx_version_id %in% gene_tx$tx & region_type == c("intron")]
 
   introns.GRanges <- GenomicRanges::GRanges(
@@ -164,7 +190,7 @@ introns_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug
     GenomeInfoDb::seqlevelsStyle(introns.GRanges) <- "UCSC"
   }
 
-  if(debug != "" | debug == FALSE){
+  if(is_debug_enabled(debug)){
     fwrite(as.data.table(introns.GRanges),paste0(debug,"/","3_introns_to_GRange_GRanges.tsv"), sep = "\t")
     fwrite(as.data.table(introns),paste0(debug,"/","3_introns_to_GRange_introns.tsv"), sep = "\t")
   }
@@ -172,7 +198,21 @@ introns_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug
   return(list(introns.GRanges, introns))
 }
 
-introns_other_tx_to_GRange <- function(genes, gene_tx, assembly, annotation, Refseq_Genes, debug = "") {
+#' Convert Introns from Other Transcripts to GRanges Object
+#'
+#' Internal helper function that converts intron information from alternative
+#' transcripts into a GRanges object.
+#'
+#' @param genes Character vector of gene names
+#' @param gene_tx A data.table with gene_name and tx columns
+#' @param assembly Genome assembly version ("hg38" or "hg19")
+#' @param annotation Annotation type ("UCSC" or "1000genomes")
+#' @param Refseq_Genes RefSeq gene annotation data
+#' @param debug Debug parameter (path or FALSE)
+#'
+#' @return A GRanges object with intron coordinates from alternative transcripts
+#' @keywords internal
+introns_other_tx_to_GRange <- function(genes, gene_tx, assembly, annotation, Refseq_Genes, debug = FALSE) {
   introns <- Refseq_Genes[
     gene_name %in% unlist(genes) &
       tx_version_id %nin% gene_tx$tx &
@@ -196,14 +236,27 @@ introns_other_tx_to_GRange <- function(genes, gene_tx, assembly, annotation, Ref
     GenomeInfoDb::seqlevelsStyle(introns.GRanges) <- "UCSC"
   }
 
-  if(debug != "" | debug == FALSE){
+  if(is_debug_enabled(debug)){
     fwrite(as.data.table(introns.GRanges),paste0(debug,"/","4_introns_other_tx_to_GRange.tsv"), sep = "\t")
   }
 
   return(introns.GRanges)
 }
 
-introns_jx_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug = "") {
+#' Convert Intron Junctions to GRanges Objects
+#'
+#' Internal helper function that creates GRanges objects for intron start and
+#' end junctions (exon-intron boundaries).
+#'
+#' @param gene_tx A data.table with gene_name and tx columns
+#' @param assembly Genome assembly version ("hg38" or "hg19")
+#' @param annotation Annotation type ("UCSC" or "1000genomes")
+#' @param Refseq_Genes RefSeq gene annotation data
+#' @param debug Debug parameter (path or FALSE)
+#'
+#' @return A list containing two GRanges objects: intron start junctions and intron end junctions
+#' @keywords internal
+introns_jx_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug = FALSE) {
   introns <- Refseq_Genes[tx_version_id %in% gene_tx$tx & region_type == c("intron")]
 
   intron_starts.GRanges <- GenomicRanges::GRanges(
@@ -229,12 +282,10 @@ introns_jx_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, de
     GenomeInfoDb::seqlevelsStyle(intron_ends.GRanges) <- "UCSC"
   }
 
-  if(debug != "" | debug == FALSE){
+  if(is_debug_enabled(debug)){
     fwrite(as.data.table(intron_starts.GRanges),paste0(debug,"/","5_introns_jx_to_GRange_starts.tsv"), sep = "\t")
     fwrite(as.data.table(intron_ends.GRanges),paste0(debug,"/","5_introns_jx_to_GRange_ends.tsv"), sep = "\t")
   }
 
   return(list(intron_starts.GRanges, intron_ends.GRanges))
 }
-
-`%nin%` <- Negate(`%in%`)
