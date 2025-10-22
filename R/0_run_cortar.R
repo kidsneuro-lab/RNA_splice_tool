@@ -44,41 +44,28 @@ cortar <- function(file,
                    ria = TRUE) {
                    # reads in absentia - count multi-exon skipping as an event for a skipped intron
 
-  # Error catching
-  # file
-  if (!file.exists(file)) {
-    stop(
-      "File '", file, "' does not exist or is non-readable. getwd()=='",
-      getwd(), "'"
-    )
-  }
-
-  # mode
-  if (mode != "default") {
-    if (mode == "panel" | mode == "research") {
-    } else {
-      stop("'", mode, "' is not an available cortar mode ('default','panel','research')")
-    }
-  }
-
-  # assembly
-  if (assembly %nin% c("hg19", "hg38")) {
-    stop("Assembly '", assembly, "' is not an available assembly ('hg38','hg19')")
-  }
-
-  # annotation
-  if (annotation %nin% c("1000genomes", "UCSC")) {
-    stop("Annotation '", annotation, "' is not an available annotation ('1000genomes','UCSC')")
-  }
-
-  # paired
+  # Error catching with improved validation
+  # Validate samplefile
+  validate_parameter("file", file, check_file_exists = TRUE)
+  
+  # Validate mode
+  validate_parameter("mode", mode, allowed_values = c("default", "panel", "research"))
+  
+  # Validate assembly
+  validate_parameter("assembly", assembly, allowed_values = c("hg19", "hg38"))
+  
+  # Validate annotation
+  validate_parameter("annotation", annotation, allowed_values = c("1000genomes", "UCSC"))
+  
+  # Validate paired parameter
   if (!is.logical(paired)) {
-    stop("Paired must be a logical: TRUE, FALSE.
-         Supplied:", paired, "
-         Note: You may need to remove quotation marks.")
+    stop(sprintf(
+      "Parameter 'paired' must be a logical value (TRUE or FALSE).\nSupplied: %s\nNote: You may need to remove quotation marks.",
+      paired
+    ))
   }
 
-  # output_dir
+  # Validate output_dir - create if doesn't exist
   if (!dir.exists(output_dir)) {
     message("Directory '", output_dir, "' does not exist.
     Would you like to create this directory?
@@ -86,14 +73,15 @@ cortar <- function(file,
     \t 2. No")
     selection <- readline(prompt = "Selection: ")
     if (selection == "1") {
-      dir.create(output_dir)
+      dir.create(output_dir, recursive = TRUE)
       message("Directory '", output_dir, "' created.")
       message("")
     } else {
-      stop(
-        "Directory '", output_dir, "' does not exist. getwd()=='",
-        getwd(), "'"
-      )
+      stop(sprintf(
+        "Directory '%s' does not exist and was not created. Current working directory: '%s'",
+        output_dir,
+        getwd()
+      ))
     }
   }
 
@@ -110,14 +98,9 @@ cortar <- function(file,
 
   # Read in cortar samplefile
   file <- data.table::fread(file)
-  for(bamfile in file$bamfile){
-    if(!file.exists(bamfile)){
-      stop(
-        "File does not exist or is non-readable. path = '",
-        bamfile, "'"
-      )
-    }
-  }
+  
+  # Validate all BAM files exist
+  validate_bam_files(file$bamfile)
 
   # Initialise debug directory
   if(debug == TRUE){

@@ -122,18 +122,13 @@ gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_
   genes <- Ensembl_Genes[`Gene name` %in% gene_tx$gene_name]
   rs_genes <- unique(Refseq_Genes[gene_name %in% gene_tx$gene_name, .(gene_name)])
 
-  genes.GRanges <- GenomicRanges::GRanges(
+  genes.GRanges <- create_granges(
     seqnames = genes$`Chromosome/scaffold name`,
-    IRanges::IRanges(
-      start = genes$`Gene start (bp)`,
-      end = genes$`Gene end (bp)`
-    ),
-    strand = genes$Strand
+    starts = genes$`Gene start (bp)`,
+    ends = genes$`Gene end (bp)`,
+    strands = genes$Strand,
+    annotation = annotation
   )
-
-  if (annotation == "UCSC") {
-    GenomeInfoDb::seqlevelsStyle(genes.GRanges) <- "UCSC"
-  }
 
   # output_dir
   if (nrow(genes) != nrow(rs_genes)) {
@@ -174,21 +169,17 @@ gene_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, Ensembl_
 introns_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug = FALSE) {
   introns <- Refseq_Genes[tx_version_id %in% gene_tx$tx & region_type == c("intron")]
 
-  introns.GRanges <- GenomicRanges::GRanges(
+  introns.GRanges <- create_granges(
     seqnames = introns$chrom,
-    IRanges::IRanges(
-      start = introns$region_start,
-      end = introns$region_end
-    ),
-    strand = introns$strand
+    starts = introns$region_start,
+    ends = introns$region_end,
+    strands = introns$strand,
+    annotation = annotation,
+    metadata = list(
+      intron_no = introns$region_no,
+      gene = introns$gene_name
+    )
   )
-
-  GenomicRanges::mcols(introns.GRanges)["intron_no"] <- introns$region_no
-  GenomicRanges::mcols(introns.GRanges)["gene"] <- introns$gene_name
-
-  if (annotation == "UCSC") {
-    GenomeInfoDb::seqlevelsStyle(introns.GRanges) <- "UCSC"
-  }
 
   if(is_debug_enabled(debug)){
     fwrite(as.data.table(introns.GRanges),paste0(debug,"/","3_introns_to_GRange_GRanges.tsv"), sep = "\t")
@@ -219,22 +210,18 @@ introns_other_tx_to_GRange <- function(genes, gene_tx, assembly, annotation, Ref
       region_type == c("intron")
   ]
 
-  introns.GRanges <- GenomicRanges::GRanges(
+  introns.GRanges <- create_granges(
     seqnames = introns$chrom,
-    IRanges::IRanges(
-      start = introns$region_start,
-      end = introns$region_end
-    ),
-    strand = introns$strand
+    starts = introns$region_start,
+    ends = introns$region_end,
+    strands = introns$strand,
+    annotation = annotation,
+    metadata = list(
+      tx_id = introns$tx_version_id,
+      intron_no = introns$region_no,
+      gene = introns$gene_name
+    )
   )
-
-  GenomicRanges::mcols(introns.GRanges)["tx_id"] <- introns$tx_version_id
-  GenomicRanges::mcols(introns.GRanges)["intron_no"] <- introns$region_no
-  GenomicRanges::mcols(introns.GRanges)["gene"] <- introns$gene_name
-
-  if (annotation == "UCSC") {
-    GenomeInfoDb::seqlevelsStyle(introns.GRanges) <- "UCSC"
-  }
 
   if(is_debug_enabled(debug)){
     fwrite(as.data.table(introns.GRanges),paste0(debug,"/","4_introns_other_tx_to_GRange.tsv"), sep = "\t")
@@ -259,28 +246,21 @@ introns_other_tx_to_GRange <- function(genes, gene_tx, assembly, annotation, Ref
 introns_jx_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug = FALSE) {
   introns <- Refseq_Genes[tx_version_id %in% gene_tx$tx & region_type == c("intron")]
 
-  intron_starts.GRanges <- GenomicRanges::GRanges(
+  intron_starts.GRanges <- create_granges(
     seqnames = introns$chrom,
-    IRanges::IRanges(
-      start = introns$region_start - INTRON_JUNCTION_UPSTREAM,
-      end = introns$region_start + INTRON_JUNCTION_DOWNSTREAM
-    ),
-    strand = introns$strand
+    starts = introns$region_start - INTRON_JUNCTION_UPSTREAM,
+    ends = introns$region_start + INTRON_JUNCTION_DOWNSTREAM,
+    strands = introns$strand,
+    annotation = annotation
   )
 
-  intron_ends.GRanges <- GenomicRanges::GRanges(
+  intron_ends.GRanges <- create_granges(
     seqnames = introns$chrom,
-    IRanges::IRanges(
-      start = introns$region_end - INTRON_JUNCTION_DOWNSTREAM,
-      end = introns$region_end + INTRON_JUNCTION_UPSTREAM
-    ),
-    strand = introns$strand
+    starts = introns$region_end - INTRON_JUNCTION_DOWNSTREAM,
+    ends = introns$region_end + INTRON_JUNCTION_UPSTREAM,
+    strands = introns$strand,
+    annotation = annotation
   )
-
-  if (annotation == "UCSC") {
-    GenomeInfoDb::seqlevelsStyle(intron_starts.GRanges) <- "UCSC"
-    GenomeInfoDb::seqlevelsStyle(intron_ends.GRanges) <- "UCSC"
-  }
 
   if(is_debug_enabled(debug)){
     fwrite(as.data.table(intron_starts.GRanges),paste0(debug,"/","5_introns_jx_to_GRange_starts.tsv"), sep = "\t")

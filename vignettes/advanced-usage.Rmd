@@ -1,0 +1,412 @@
+---
+title: "Advanced Usage: Working with Complex Scenarios"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Advanced Usage: Working with Complex Scenarios}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+This vignette covers advanced usage scenarios for the cortar package, including working with multiple transcripts, handling family data, and customizing coverage thresholds.
+
+## Working with Specific Transcripts
+
+### Specifying Transcript Versions
+
+You can specify exact RefSeq transcript versions in your sample file:
+
+```{r eval=FALSE}
+library(cortar)
+
+# Create sample file with specific transcripts
+sample_data <- data.frame(
+  sampleID = c("patient1", "control1"),
+  familyID = c(1, 2),
+  sampletype = c("test", ""),
+  genes = c("DMD", "DMD"),
+  transcript = c("NM_004006.3", "NM_004006.3"),
+  bamfile = c("/path/to/patient1.bam", "/path/to/control1.bam"),
+  coverage = c("het", "het")
+)
+
+write.table(sample_data, "samples.tsv", sep = "\t", 
+            row.names = FALSE, quote = FALSE)
+
+# Run cortar with specific transcript
+cortar(
+  file = "samples.tsv",
+  mode = "default",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "output"
+)
+```
+
+### Using Canonical Transcripts
+
+Leave the transcript column blank to use the canonical RefSeq transcript:
+
+```{r eval=FALSE}
+sample_data <- data.frame(
+  sampleID = c("patient1"),
+  familyID = c(1),
+  sampletype = c("test"),
+  genes = c("DMD"),
+  transcript = c(""),  # Will use canonical transcript
+  bamfile = c("/path/to/patient1.bam"),
+  coverage = c("het")
+)
+```
+
+## Handling Family Data
+
+### Preventing Intra-Family Comparisons
+
+The familyID column ensures that related samples are not compared to each other:
+
+```{r eval=FALSE}
+# Family trio: proband, mother, father
+family_data <- data.frame(
+  sampleID = c("proband_F1", "mother_F1", "father_F1"),
+  familyID = c(1, 1, 1),  # Same family
+  sampletype = c("test", "", ""),
+  genes = c("NF1", "NF1", "NF1"),
+  transcript = c("", "", ""),
+  bamfile = c("/path/to/proband.bam", 
+              "/path/to/mother.bam", 
+              "/path/to/father.bam"),
+  coverage = c("het", "het", "het")
+)
+
+# Proband will not be compared to mother or father
+# But will be compared to unrelated controls
+```
+
+### Multiple Families
+
+```{r eval=FALSE}
+multi_family_data <- data.frame(
+  sampleID = c("proband_F1", "mother_F1", 
+               "proband_F2", "father_F2",
+               "control_unrelated"),
+  familyID = c(1, 1, 2, 2, 3),
+  sampletype = c("test", "", "test", "", ""),
+  genes = c("DMD", "DMD", "DMD", "DMD", "DMD"),
+  transcript = c("", "", "", "", ""),
+  bamfile = c("/path/to/F1_proband.bam",
+              "/path/to/F1_mother.bam",
+              "/path/to/F2_proband.bam",
+              "/path/to/F2_father.bam",
+              "/path/to/control.bam"),
+  coverage = c("het", "het", "het", "het", "het")
+)
+```
+
+## Custom Coverage Thresholds
+
+### Standard Coverage Types
+
+Cortar provides standard coverage thresholds:
+
+- **het** (heterozygous): 60 reads
+- **hom** (homozygous): 30 reads
+- **hemi** (hemizygous): 30 reads
+
+### Custom Numeric Thresholds
+
+You can specify custom coverage thresholds:
+
+```{r eval=FALSE}
+custom_coverage_data <- data.frame(
+  sampleID = c("low_coverage", "high_coverage", "standard"),
+  familyID = c(1, 2, 3),
+  sampletype = c("test", "test", "test"),
+  genes = c("DMD", "DMD", "DMD"),
+  transcript = c("", "", ""),
+  bamfile = c("/path/to/low.bam", 
+              "/path/to/high.bam", 
+              "/path/to/standard.bam"),
+  coverage = c("20", "100", "het")  # Custom numeric or standard
+)
+```
+
+## Panel Analysis
+
+### Gene Panel Setup
+
+Panel mode is ideal for analyzing multiple genes across many samples:
+
+```{r eval=FALSE}
+# Create sample file for panel analysis
+panel_data <- data.frame(
+  sampleID = paste0("sample_", 1:10),
+  familyID = 1:10,
+  sampletype = rep(c("test", ""), each = 5),
+  genes = rep("", 10),  # Leave blank for panel mode
+  transcript = rep("", 10),
+  bamfile = paste0("/path/to/sample_", 1:10, ".bam"),
+  coverage = rep("het", 10)
+)
+
+write.table(panel_data, "panel_samples.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+# Run with gene panel
+cortar(
+  file = "panel_samples.tsv",
+  mode = "panel",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "panel_output",
+  genelist = c(
+    "DMD", "TTN", "CFTR", "NF1", "COL2A1",
+    "FBN1", "LMNA", "MYH7", "MYBPC3", "SCN5A"
+  )
+)
+```
+
+## Research Mode
+
+### Exploratory Analysis
+
+Research mode provides less stringent filtering for exploratory analyses:
+
+```{r eval=FALSE}
+cortar(
+  file = "research_samples.tsv",
+  mode = "research",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "research_output",
+  genelist = c("GENE1", "GENE2", "GENE3")
+)
+```
+
+**Key Differences from Default/Panel Mode:**
+- Different filtering criteria for splicing events
+- May report more events (including lower confidence)
+- Useful for hypothesis generation
+
+## Batch Processing
+
+### Organizing Multiple Analyses
+
+```{r eval=FALSE}
+# Directory structure:
+# batch_analysis/
+#   ├── cohort1_samples.tsv
+#   ├── cohort2_samples.tsv
+#   └── cohort3_samples.tsv
+
+cortar_batch(
+  folder = "batch_analysis",
+  pattern = "*_samples.tsv",
+  mode = "panel",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "batch_output",
+  genelist = c("DMD", "TTN", "NF1")
+)
+
+# Output will be organized by cohort
+```
+
+## Working with Different Genome Assemblies
+
+### hg38 (Default)
+
+```{r eval=FALSE}
+cortar(
+  file = "samples.tsv",
+  mode = "default",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "output_hg38"
+)
+```
+
+### hg19
+
+```{r eval=FALSE}
+cortar(
+  file = "samples.tsv",
+  mode = "default",
+  assembly = "hg19",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "output_hg19"
+)
+```
+
+### 1000 Genomes Annotation
+
+```{r eval=FALSE}
+cortar(
+  file = "samples.tsv",
+  mode = "default",
+  assembly = "hg38",
+  annotation = "1000genomes",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "output_1000g"
+)
+```
+
+## Handling Different RNA-seq Protocols
+
+### Unstranded RNA-seq
+
+```{r eval=FALSE}
+cortar(
+  file = "samples.tsv",
+  mode = "default",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 0,  # Unstranded
+  output_dir = "output"
+)
+```
+
+### Forward Stranded
+
+```{r eval=FALSE}
+cortar(
+  file = "samples.tsv",
+  mode = "default",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 1,  # Forward stranded
+  output_dir = "output"
+)
+```
+
+### Reverse Stranded (Most Common)
+
+```{r eval=FALSE}
+cortar(
+  file = "samples.tsv",
+  mode = "default",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,  # Reverse stranded
+  output_dir = "output"
+)
+```
+
+### Single-End Sequencing
+
+```{r eval=FALSE}
+cortar(
+  file = "samples.tsv",
+  mode = "default",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = FALSE,  # Single-end
+  stranded = 2,
+  output_dir = "output"
+)
+```
+
+## Adding Custom Prefixes
+
+### Organizing Output Files
+
+```{r eval=FALSE}
+# Add prefix to distinguish different analyses
+cortar(
+  file = "samples.tsv",
+  mode = "panel",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "output",
+  genelist = c("DMD", "TTN"),
+  prefix = "cohort1_neuromuscular_"
+)
+
+# Output files will be named:
+# cohort1_neuromuscular_report.xlsx
+# cohort1_neuromuscular_report.pdf
+```
+
+## Debug Mode for Troubleshooting
+
+### Enabling Debug Output
+
+```{r eval=FALSE}
+cortar(
+  file = "samples.tsv",
+  mode = "default",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "output",
+  debug = TRUE
+)
+```
+
+**Debug mode creates intermediate files:**
+- `0_samplefile.tsv`: Processed sample file
+- `1_tx_extraction.tsv`: Extracted transcripts
+- `2_gene_to_GRange.tsv`: Gene coordinates
+- `3_introns_to_GRange_*.tsv`: Intron coordinates
+- `4_introns_other_tx_to_GRange.tsv`: Alternative transcript introns
+- `5_introns_jx_to_GRange_*.tsv`: Junction coordinates
+- `6_combined_sj.tsv`: Combined junction data
+
+These files help diagnose issues with gene selection, coordinate extraction, or read counting.
+
+## Best Practices
+
+### Sample File Organization
+
+1. **Use clear, unique sample IDs**
+2. **Assign family IDs consistently**
+3. **Verify BAM file paths before running**
+4. **Check genome assembly matches BAM alignment**
+5. **Use appropriate coverage thresholds**
+
+### Performance Optimization
+
+1. **Use BAM index files** (.bai) for faster access
+2. **Process samples in batches** rather than individually
+3. **Consider subsetting** BAM files for faster iteration
+4. **Use debug mode** only when troubleshooting
+
+### Quality Control
+
+1. **Check sequencing depth** before analysis
+2. **Verify strand orientation** of your library
+3. **Confirm transcript versions** match your research question
+4. **Review control samples** for appropriate comparisons
+
+## Session Info
+
+```{r eval=FALSE}
+sessionInfo()
+```

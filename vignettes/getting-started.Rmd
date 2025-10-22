@@ -1,0 +1,224 @@
+---
+title: "Getting Started with cortar"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with cortar}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+The **cortar** package extracts reads at the exon-intron junction from RNA-seq data and reports the proportion of splicing events across each intron. By comparing these values to controls, deviations from normal splicing can be characterized in test samples.
+
+This vignette will guide you through the basic usage of cortar for analyzing RNA splicing patterns.
+
+## Installation
+
+You can install cortar from GitHub with:
+
+```{r eval=FALSE}
+# Install BiocManager if not already installed
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+# Install Bioconductor dependencies
+BiocManager::install(c(
+  "GenomicRanges",
+  "GenomicFeatures",
+  "GenomicAlignments",
+  "BSgenome.Hsapiens.UCSC.hg38",
+  "BSgenome.Hsapiens.UCSC.hg19",
+  "BSgenome.Hsapiens.1000genomes.hs37d5"
+))
+
+# Install cortar from GitHub
+devtools::install_github("kidsneuro-lab/RNA_splice_tool")
+```
+
+## Quick Start
+
+```{r eval=FALSE}
+library(cortar)
+
+# Run test dataset
+run_cortar_test()
+
+# Check output directory for reports
+# Default location: <directory>/cortar_test/output
+```
+
+## Preparing Your Data
+
+### Creating a Sample File
+
+Before running cortar, you need to create a tab-separated sample file containing information about your samples. The file should have the following columns:
+
+- **sampleID**: A unique identifier for the sample
+- **familyID**: A unique identifier for related samples (prevents comparison between related samples)
+- **sampletype**: Whether analysis is desired for this sample ("test" or leave blank for controls)
+- **genes**: Gene symbol for the gene under investigation (can be blank for panel/research mode)
+- **transcript**: Transcript under investigation (blank will default to canonical RefSeq transcript)
+- **bamfile**: Absolute or relative file path to the BAM file
+- **coverage**: Expected coverage type ("het", "hom", "hemi", or custom numeric value)
+
+Example sample file:
+
+```
+sampleID	familyID	sampletype	genes	transcript	bamfile	coverage
+proband_1	1	test	DMD	NM_004006.2	/path/to/proband_1.bam	het
+control_1	2		DMD	NM_004006.2	/path/to/control_1.bam	het
+proband_2	3	test	TTN	NM_001267550.2	/path/to/proband_2.bam	hom
+control_2	4		TTN	NM_001267550.2	/path/to/control_2.bam	hom
+```
+
+**Important Notes:**
+- By default, cortar will not compare samples with the same gene/transcript to avoid comparing samples where the same gene is affected
+- For control samples, use a valid gene name and transcript number
+- BAM files must be aligned to the same genome assembly (hg38 or hg19)
+
+## Running Cortar
+
+### Default Mode
+
+In default mode, each sample can specify its own gene of interest in the sample file:
+
+```{r eval=FALSE}
+cortar(
+  file = "path/to/samplefile.tsv",
+  mode = "default",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "path/to/output"
+)
+```
+
+### Panel Mode
+
+Panel mode analyzes a specific set of genes across all samples:
+
+```{r eval=FALSE}
+cortar(
+  file = "path/to/samplefile.tsv",
+  mode = "panel",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "path/to/output",
+  genelist = c("DMD", "TTN", "CFTR", "NF1")
+)
+```
+
+### Research Mode
+
+Research mode is similar to panel mode but with different filtering criteria:
+
+```{r eval=FALSE}
+cortar(
+  file = "path/to/samplefile.tsv",
+  mode = "research",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "path/to/output",
+  genelist = c("GENE1", "GENE2")
+)
+```
+
+## Understanding Parameters
+
+### Required Parameters
+
+- **file**: Path to your sample file
+- **mode**: Analysis mode ("default", "panel", or "research")
+- **assembly**: Genome assembly used for alignment ("hg38" or "hg19")
+- **annotation**: Annotation source ("UCSC" or "1000genomes")
+- **paired**: Whether RNA-seq is paired-end (TRUE or FALSE)
+- **stranded**: Strandedness of RNA-seq (0 = unstranded, 1 = forward, 2 = reverse)
+- **output_dir**: Directory for output files
+
+### Optional Parameters
+
+- **genelist**: Character vector of genes (required for panel and research modes)
+- **prefix**: Prefix to add to output file names
+- **debug**: Enable debug mode for troubleshooting (TRUE or FALSE)
+
+## Batch Processing
+
+You can run multiple sample files in sequence:
+
+```{r eval=FALSE}
+cortar_batch(
+  folder = "path/to/samplefiles",
+  pattern = "*.tsv",
+  mode = "default",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "path/to/output"
+)
+```
+
+## Output Files
+
+Cortar generates the following outputs:
+
+1. **Excel Report**: Contains detailed splicing event information with highlighting
+2. **PDF Report**: Visual representation of splicing patterns
+3. **Debug Files** (if enabled): Intermediate files for troubleshooting
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue**: "File does not exist or is not readable"
+- **Solution**: Check that all BAM file paths in your sample file are correct and accessible
+
+**Issue**: "Gene name is invalid"
+- **Solution**: Verify that gene symbols are correct and exist in the selected assembly
+
+**Issue**: "Parameter 'mode' has invalid value"
+- **Solution**: Ensure mode is one of: "default", "panel", or "research"
+
+### Debug Mode
+
+Enable debug mode for detailed troubleshooting:
+
+```{r eval=FALSE}
+cortar(
+  file = "path/to/samplefile.tsv",
+  mode = "default",
+  assembly = "hg38",
+  annotation = "UCSC",
+  paired = TRUE,
+  stranded = 2,
+  output_dir = "path/to/output",
+  debug = TRUE
+)
+```
+
+Debug files will be saved to `<output_dir>/debug/`
+
+## Next Steps
+
+- See the "Advanced Usage" vignette for complex scenarios
+- Check the function documentation with `?cortar`
+- Visit the GitHub repository for updates and issue reporting
+
+## Session Info
+
+```{r eval=FALSE}
+sessionInfo()
+```
