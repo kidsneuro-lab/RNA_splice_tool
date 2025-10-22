@@ -1,3 +1,20 @@
+#' Annotate and Quantify Splicing Events
+#'
+#' Internal function that annotates detected splicing junctions and quantifies
+#' their relative proportions. Identifies canonical splicing, alternative splicing,
+#' exon skipping, and cryptic splice site usage.
+#'
+#' @param ids Character vector of sample identifiers
+#' @param combined_sj GRanges object with combined splice junction data
+#' @param introns.GRanges GRanges object with canonical intron coordinates
+#' @param introns_other_tx.GRanges GRanges object with alternative transcript introns
+#' @param introns Data.table with intron metadata
+#' @param assembly Genome assembly version ("hg38" or "hg19")
+#' @param debug Debug parameter (path or FALSE)
+#' @param ria Logical indicating whether to include "reads in absentia"
+#'
+#' @return A data.table with annotated and quantified splicing events
+#' @keywords internal
 annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_other_tx.GRanges, introns, assembly, debug, ria) {
 
   message("Annotating and quantifying events...")
@@ -22,7 +39,7 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
     )
 
     # Include reads in absentia
-    if(ria == T){
+    if(ria == TRUE){
       qryhits_within <- GenomicRanges::findOverlaps(introns.GRanges[query_intron], combined_sj_sorted, type = "within")
       query_intron.GRanges <- c(
         query_intron.GRanges,
@@ -92,13 +109,22 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
 
   message("")
 
-  if(debug != "" | debug == FALSE){
+  if(is_debug_enabled(debug)){
     fwrite(as.data.table(all_splicing_events),paste0(debug,"/","7_all_splicing_events.tsv"), sep = "\t")
   }
 
   return(all_splicing_events)
 }
 
+#' Annotate Splicing Events
+#'
+#' Internal helper function that converts event information into human-readable
+#' format (e.g., "canonical splicing", "exon skipping", "cryptic splice-site use").
+#'
+#' @param query_intron.dt A data.table containing splicing event information
+#'
+#' @return A character vector with annotated event descriptions
+#' @keywords internal
 #Takes a data-table with events and returns them in a human readable format
 eventAnnotation <- function(query_intron.dt){
     event <- 1
@@ -160,6 +186,16 @@ eventAnnotation <- function(query_intron.dt){
     return(events)
 }
 
+#' Calculate Frame Conservation for Splicing Events
+#'
+#' Internal helper function that determines whether a splicing event maintains
+#' the reading frame.
+#'
+#' @param query_intron.dt A data.table containing splicing event information
+#' @param assembly Genome assembly version ("hg38" or "hg19")
+#'
+#' @return A vector indicating frame conservation status (TRUE/FALSE/NA/"")
+#' @keywords internal
 #Calculate event frame - this could be pre-computed for annotated
 framed <- function(query_intron.dt, assembly){
 
