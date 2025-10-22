@@ -39,7 +39,7 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
     )
 
     # Include reads in absentia
-    if(ria == T){
+    if(ria == TRUE){
       qryhits_within <- GenomicRanges::findOverlaps(introns.GRanges[query_intron], combined_sj_sorted, type = "within")
       query_intron.GRanges <- c(
         query_intron.GRanges,

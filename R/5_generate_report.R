@@ -42,7 +42,7 @@ generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug
           testgenename <- unique(Sample_File$genes[sample_number])
         }
         # will need a for loop
-        if(figure == T){
+        if(figure == TRUE){
           for(gene in testgenes){
             normalSpliceMap(all_splicing_events_sample, familycols[1], proband, gene, export = Export, mode = mode, prefix = prefix)
           }
@@ -210,6 +210,6 @@ generate.excel <- function(data, familymembers, gene, export, sample, prefix){
     # Export report
     openxlsx::saveWorkbook(wb, paste(export,"/",prefix,sample,"_",gene,"_combined_dt_",
                            ".xlsx", sep=""),
-                 overwrite = T)
+                 overwrite = TRUE)
 
 }
