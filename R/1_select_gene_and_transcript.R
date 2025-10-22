@@ -262,8 +262,8 @@ introns_jx_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, de
   intron_starts.GRanges <- GenomicRanges::GRanges(
     seqnames = introns$chrom,
     IRanges::IRanges(
-      start = introns$region_start - 4,
-      end = introns$region_start + 3
+      start = introns$region_start - INTRON_JUNCTION_UPSTREAM,
+      end = introns$region_start + INTRON_JUNCTION_DOWNSTREAM
     ),
     strand = introns$strand
   )
@@ -271,8 +271,8 @@ introns_jx_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, de
   intron_ends.GRanges <- GenomicRanges::GRanges(
     seqnames = introns$chrom,
     IRanges::IRanges(
-      start = introns$region_end - 3,
-      end = introns$region_end + 4
+      start = introns$region_end - INTRON_JUNCTION_DOWNSTREAM,
+      end = introns$region_end + INTRON_JUNCTION_UPSTREAM
     ),
     strand = introns$strand
   )

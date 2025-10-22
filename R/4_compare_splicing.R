@@ -46,24 +46,16 @@ if(mode == "default" | mode == "panel"){
       ctrlscols <- paste0("pct_", ctrls)
       ctrlsreadcols <- paste0("count_", ctrls)
 
-      #In default mode, add a filter to remove controls with a median coverage less than 15 (arbitrary) over all canonical exons
+      #In default mode, add a filter to remove controls with a median coverage less than threshold over all canonical exons
       if(mode == "default"){
         canon_splicing_counts <- all_splicing_events_sample[gene == Sample_File$gene[sample_number] &
                                                             annotated == "canonical" &
                                                             SJ_IR == "SJ", ..ctrlsreadcols]
 
-        if(Sample_File$coverage[sample_number] == "het"){
-          coverage <- 60
-        }else if(Sample_File$coverage[sample_number] %in% c("hom","hemi")){
-          coverage <- 30
-        }else if(Sample_File$coverage[sample_number] == ""){
-          coverage <- 0
-        }else{
-          coverage <- as.numeric(Sample_File$coverage[sample_number])
-        }
+        coverage_threshold <- get_coverage_threshold(Sample_File$coverage[sample_number])
 
-        ctrlscols <- ctrlscols[sapply(canon_splicing_counts, median) > coverage]
-        ctrlsreadcols <- ctrlsreadcols[sapply(canon_splicing_counts, median) > coverage]
+        ctrlscols <- ctrlscols[sapply(canon_splicing_counts, median) > coverage_threshold]
+        ctrlsreadcols <- ctrlsreadcols[sapply(canon_splicing_counts, median) > coverage_threshold]
 
       }
       # Initialise various columns
