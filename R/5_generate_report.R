@@ -1,3 +1,17 @@
+#' Generate Reports
+#'
+#' Internal function that generates Excel and PDF reports summarizing splicing
+#' analysis results.
+#'
+#' @param comparisons List of comparison results from compareSplicing()
+#' @param Sample_File Data.table with sample metadata
+#' @param Export Export directory path
+#' @param mode Analysis mode: "default", "panel", or "research"
+#' @param prefix Prefix for output filenames
+#' @param debug Debug parameter (path or FALSE)
+#'
+#' @return NULL (generates report files as side effect)
+#' @keywords internal
 generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug) {
     message("Generating reports...")
 
@@ -28,7 +42,7 @@ generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug
           testgenename <- unique(Sample_File$genes[sample_number])
         }
         # will need a for loop
-        if(figure == T){
+        if(figure == TRUE){
           for(gene in testgenes){
             normalSpliceMap(all_splicing_events_sample, familycols[1], proband, gene, export = Export, mode = mode, prefix = prefix)
           }
@@ -76,6 +90,21 @@ generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug
   }
 }
 
+#' Generate Normal Splice Map Visualization
+#'
+#' Internal helper function that creates PDF plots showing splicing patterns
+#' across introns.
+#'
+#' @param table Data.table containing splicing event information
+#' @param familycols Column names for family sample percentages
+#' @param proband Proband sample identifier
+#' @param genes Gene name for the plot
+#' @param export Export directory path
+#' @param mode Analysis mode ("default", "panel", or "research")
+#' @param prefix Prefix for output filenames
+#'
+#' @return NULL (generates PDF files as side effect)
+#' @keywords internal
 normalSpliceMap <- function(table, familycols, proband, genes, export, mode, prefix){
 
   pdf(paste0(export,"/",prefix,proband,"_",genes,"_normalSpliceMap.pdf"), width = 5, height = 3)
@@ -126,6 +155,20 @@ normalSpliceMap <- function(table, familycols, proband, genes, export, mode, pre
     dev.off()
 }
 
+#' Generate Excel Report
+#'
+#' Internal helper function that creates formatted Excel workbooks with
+#' splicing analysis results.
+#'
+#' @param data Data.table containing splicing event information
+#' @param familymembers Number of family members in the analysis
+#' @param gene Gene name for the report
+#' @param export Export directory path
+#' @param sample Sample identifier
+#' @param prefix Prefix for output filenames
+#'
+#' @return NULL (generates Excel file as side effect)
+#' @keywords internal
 #Generate Report
 generate.excel <- function(data, familymembers, gene, export, sample, prefix){
 
@@ -167,6 +210,6 @@ generate.excel <- function(data, familymembers, gene, export, sample, prefix){
     # Export report
     openxlsx::saveWorkbook(wb, paste(export,"/",prefix,sample,"_",gene,"_combined_dt_",
                            ".xlsx", sep=""),
-                 overwrite = T)
+                 overwrite = TRUE)
 
 }

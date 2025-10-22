@@ -86,12 +86,12 @@ extractCountReads <- function(genes.GRanges,
     sample_name <- sample_names[sample_number]
     message("\t", sample_name)
 
-    if (paired == F) {
+    if (paired == FALSE) {
       alignment <- GenomicAlignments::readGAlignments(
         file = bamfiles[sample_number],
         param = param
       )
-    } else if (paired == T) {
+    } else if (paired == TRUE) {
       alignment <- GenomicAlignments::readGAlignmentPairs(
         file = bamfiles[sample_number],
         param = param,
@@ -223,7 +223,7 @@ extractCountReads <- function(genes.GRanges,
 
   message("")
 
-  if(debug != "" | debug == FALSE){
+  if(is_debug_enabled(debug)){
     fwrite(as.data.table(combined_sj),paste0(debug,"/","6_combined_sj.tsv"), sep = "\t")
   }
 

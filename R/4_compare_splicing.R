@@ -1,3 +1,17 @@
+#' Compare Splicing Between Samples
+#'
+#' Internal function that performs statistical comparisons of splicing events
+#' between test samples and controls. Calculates differences, standard deviations,
+#' and identifies unique events.
+#'
+#' @param all_splicing_events Data.table containing all annotated splicing events
+#' @param Sample_File Data.table with sample metadata (from cortar samplefile)
+#' @param mode Analysis mode: "default", "panel", or "research"
+#' @param debug Debug parameter (path or FALSE)
+#'
+#' @return A list of comparison results (one per test sample) or a single
+#'   data.table for research mode
+#' @keywords internal
 compareSplicing <- function(all_splicing_events, Sample_File, mode, debug) {
     message("Comparing samples...")
     comparisons <- list()
@@ -32,24 +46,16 @@ if(mode == "default" | mode == "panel"){
       ctrlscols <- paste0("pct_", ctrls)
       ctrlsreadcols <- paste0("count_", ctrls)
 
-      #In default mode, add a filter to remove controls with a median coverage less than 15 (arbitrary) over all canonical exons
+      #In default mode, add a filter to remove controls with a median coverage less than threshold over all canonical exons
       if(mode == "default"){
         canon_splicing_counts <- all_splicing_events_sample[gene == Sample_File$gene[sample_number] &
                                                             annotated == "canonical" &
                                                             SJ_IR == "SJ", ..ctrlsreadcols]
 
-        if(Sample_File$coverage[sample_number] == "het"){
-          coverage <- 60
-        }else if(Sample_File$coverage[sample_number] %in% c("hom","hemi")){
-          coverage <- 30
-        }else if(Sample_File$coverage[sample_number] == ""){
-          coverage <- 0
-        }else{
-          coverage <- as.numeric(Sample_File$coverage[sample_number])
-        }
+        coverage_threshold <- get_coverage_threshold(Sample_File$coverage[sample_number])
 
-        ctrlscols <- ctrlscols[sapply(canon_splicing_counts, median) > coverage]
-        ctrlsreadcols <- ctrlsreadcols[sapply(canon_splicing_counts, median) > coverage]
+        ctrlscols <- ctrlscols[sapply(canon_splicing_counts, median) > coverage_threshold]
+        ctrlsreadcols <- ctrlsreadcols[sapply(canon_splicing_counts, median) > coverage_threshold]
 
       }
       # Initialise various columns
@@ -184,7 +190,7 @@ if(mode == "default" | mode == "panel"){
   }
   message("")
 
-  if(debug != "" | debug == FALSE){
+  if(is_debug_enabled(debug)){
     fwrite(as.data.table(comparisons),paste0(debug,"/","8_comparisons.tsv"), sep = "\t")
   }
 

@@ -40,8 +40,8 @@ cortar <- function(file,
                    output_dir = "~",
                    genelist = NULL,
                    prefix = "",
-                   debug = F,
-                   ria = T) {
+                   debug = FALSE,
+                   ria = TRUE) {
                    # reads in absentia - count multi-exon skipping as an event for a skipped intron
 
   # Error catching
@@ -72,7 +72,7 @@ cortar <- function(file,
   }
 
   # paired
-  if (class(paired) != "logical") {
+  if (!is.logical(paired)) {
     stop("Paired must be a logical: TRUE, FALSE.
          Supplied:", paired, "
          Note: You may need to remove quotation marks.")
@@ -120,7 +120,7 @@ cortar <- function(file,
   }
 
   # Initialise debug directory
-  if(debug == T){
+  if(debug == TRUE){
     debug <- paste0(output_dir,"debug")
     message(paste0("RUNNING IN DEBUG MODE! All output will be saved to: '", debug,"'"))
     message("")
@@ -129,7 +129,7 @@ cortar <- function(file,
     }
     fwrite(as.data.table(file),paste0(debug,"/","0_samplefile.tsv"), sep = "\t")
   }else{
-    debug <- ""
+    debug <- FALSE
   }
 
   # Select data of interest
@@ -237,14 +237,14 @@ cortar_batch <- function(folder,
                            assembly = "hg38",
                            annotation = "UCSC",
                            input_type = "sj",
-                           paired = T,
+                           paired = TRUE,
                            stranded = 2,
-                           subset = F,
+                           subset = FALSE,
                            output_dir = "~",
                            genelist = NULL,
                            prefix = "",
                            debug = debug,
-                           ria = T){
+                           ria = TRUE){
   batches_in <- sapply(list.files(folder, pattern = pattern),function(x){paste0(folder,"/",x)})
   batches_out <- sapply(list.files(folder, pattern = pattern),function(x){paste0(output_dir,"/",strsplit(x,"\\.")[[1]][1])})
   for(batch in seq(1,length(batches_in))){
@@ -431,9 +431,9 @@ run_cortar_test <- function(test_path = getwd()){
 
   dest_path <- paste0(test_path,"/cortar_test")
 
-  dir.create(dest_path, showWarnings = T, recursive = T)
-  dir.create(paste0(dest_path,"/output"), showWarnings = T, recursive = T)
-  file.copy(from = extdata_path, to = dest_path, recursive = T)
+  dir.create(dest_path, showWarnings = TRUE, recursive = TRUE)
+  dir.create(paste0(dest_path,"/output"), showWarnings = TRUE, recursive = TRUE)
+  file.copy(from = extdata_path, to = dest_path, recursive = TRUE)
 
   test_samplefile.tsv <- fread(paste0(dest_path,"/extdata/test_samplefile.tsv"))
 
