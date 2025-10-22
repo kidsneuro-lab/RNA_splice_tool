@@ -133,3 +133,52 @@ test_that("create_granges sets UCSC seqlevel style correctly", {
   # After setting UCSC style, chromosome names should have "chr" prefix
   expect_match(as.character(GenomicRanges::seqnames(gr))[1], "chr", ignore.case = TRUE)
 })
+
+# Test genome assembly caching ------------------------------------------------
+
+test_that("get_genome_assembly returns BSgenome object", {
+  genome <- get_genome_assembly("hg38", "UCSC")
+  expect_s4_class(genome, "BSgenome")
+})
+
+test_that("get_genome_assembly caches results", {
+  # Clear cache first
+  clear_genome_cache()
+  
+  # First call should load and cache
+  genome1 <- get_genome_assembly("hg38", "UCSC")
+  
+  # Second call should retrieve from cache
+  genome2 <- get_genome_assembly("hg38", "UCSC")
+  
+  # Both should be identical
+  expect_identical(genome1, genome2)
+})
+
+test_that("get_genome_assembly handles different assemblies", {
+  expect_s4_class(get_genome_assembly("hg38", "UCSC"), "BSgenome")
+  expect_s4_class(get_genome_assembly("hg19", "UCSC"), "BSgenome")
+  expect_s4_class(get_genome_assembly("hg19", "1000genomes"), "BSgenome")
+})
+
+test_that("get_genome_assembly rejects invalid combinations", {
+  expect_error(
+    get_genome_assembly("hg37", "UCSC"),
+    "Invalid assembly/annotation combination"
+  )
+  expect_error(
+    get_genome_assembly("hg38", "InvalidAnnotation"),
+    "Invalid assembly/annotation combination"
+  )
+})
+
+test_that("clear_genome_cache empties the cache", {
+  # Load a genome to populate cache
+  get_genome_assembly("hg38", "UCSC")
+  
+  # Clear cache
+  clear_genome_cache()
+  
+  # Cache should be empty
+  expect_equal(length(ls(envir = .genome_cache)), 0)
+})

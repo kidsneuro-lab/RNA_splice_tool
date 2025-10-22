@@ -9,6 +9,9 @@ DEFAULT_COVERAGE_NONE <- 0
 INTRON_JUNCTION_UPSTREAM <- 4
 INTRON_JUNCTION_DOWNSTREAM <- 3
 
+# Cache for genome assemblies (improves performance when running multiple analyses)
+.genome_cache <- new.env(parent = emptyenv())
+
 #' Check if debug mode is enabled
 #'
 #' @param debug Debug parameter (can be a path string or FALSE)
@@ -157,5 +160,64 @@ validate_bam_files <- function(bamfiles) {
     ))
   }
   
+  return(invisible(NULL))
+}
+
+#' Get Genome Assembly (with caching)
+#'
+#' Internal helper to retrieve genome assembly objects with caching for
+#' improved performance when running multiple analyses.
+#'
+#' @param assembly Genome assembly version ("hg38" or "hg19")
+#' @param annotation Annotation type ("UCSC", "1000genomes", or "NCBI")
+#'
+#' @return BSgenome object for the specified assembly and annotation
+#' @keywords internal
+get_genome_assembly <- function(assembly, annotation) {
+  cache_key <- paste(assembly, annotation, sep = "_")
+  
+  # Check if already cached
+  if (exists(cache_key, envir = .genome_cache)) {
+    return(get(cache_key, envir = .genome_cache))
+  }
+  
+  # Load genome assembly
+  genome <- NULL
+  if (assembly == "hg19") {
+    if (annotation == "UCSC") {
+      genome <- BSgenome.Hsapiens.UCSC.hg19::BSgenome.Hsapiens.UCSC.hg19
+    } else if (annotation == "1000genomes") {
+      genome <- BSgenome.Hsapiens.1000genomes.hs37d5::BSgenome.Hsapiens.1000genomes.hs37d5
+    }
+  } else if (assembly == "hg38") {
+    if (annotation == "UCSC") {
+      genome <- BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38
+    } else if (annotation == "NCBI") {
+      genome <- BSgenome.Hsapiens.NCBI.GRCh38::BSgenome.Hsapiens.NCBI.GRCh38
+    }
+  }
+  
+  if (is.null(genome)) {
+    stop(sprintf(
+      "Invalid assembly/annotation combination: %s/%s",
+      assembly, annotation
+    ))
+  }
+  
+  # Cache and return
+  assign(cache_key, genome, envir = .genome_cache)
+  return(genome)
+}
+
+#' Clear Genome Assembly Cache
+#'
+#' Internal helper to clear the genome assembly cache. Useful for memory
+#' management when processing large numbers of samples.
+#'
+#' @return NULL (invisibly)
+#' @keywords internal
+clear_genome_cache <- function() {
+  rm(list = ls(envir = .genome_cache), envir = .genome_cache)
+  gc()  # Force garbage collection
   return(invisible(NULL))
 }

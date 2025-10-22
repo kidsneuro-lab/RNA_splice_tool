@@ -11,9 +11,11 @@
 #'     `"hg19"`
 #' @param annotation  Annotation used for alignment: either `"UCSC"` or
 #'     `"1000genomes"`
-#' @param paired Is the RNA-seq paired-end?: `TRUE`/`FALSE`
+#' @param input_type Type of input files: `"bamfile"` (default) or `"sj"` for
+#'     pre-computed junction files
+#' @param paired Is the RNA-seq paired-end?: `TRUE` (default) or `FALSE`
 #' @param stranded Strandedness of the RNA-seq: `0` for unstranded, `1`
-#'     for forward stranded or `2` for reverse stranded
+#'     for forward stranded or `2` for reverse stranded (default)
 #' @param subset Does the RNA-Seq need to be subsetted to the genes
 #'     of interest? `TRUE`/`FALSE` (Optional but significantly improves speed
 #'     of subsequent analyses - not currently available)
@@ -23,11 +25,64 @@
 #'     (Only for panel or research modes; default = NULL)
 #' @param prefix A character vector to be appended to the beginning of the
 #'     output file names
+#' @param debug Enable debug mode to save intermediate files. Set to `TRUE` or
+#'     a path string (default = FALSE)
+#' @param ria Reads in absentia - count multi-exon skipping as an event for a
+#'     skipped intron (default = TRUE)
 #'
+#' @return NULL (invisibly). Results are written to files in `output_dir`
 #' @export
 #'
 #' @examples
-#' #### == COMING SOON == ####
+#' \dontrun{
+#' # Default mode - analyze single gene per sample
+#' cortar(
+#'   file = "samples.tsv",
+#'   mode = "default",
+#'   assembly = "hg38",
+#'   annotation = "UCSC",
+#'   paired = TRUE,
+#'   stranded = 2,
+#'   output_dir = "output"
+#' )
+#'
+#' # Panel mode - analyze multiple genes across all samples
+#' cortar(
+#'   file = "panel_samples.tsv",
+#'   mode = "panel",
+#'   assembly = "hg38",
+#'   annotation = "UCSC",
+#'   paired = TRUE,
+#'   stranded = 2,
+#'   output_dir = "panel_output",
+#'   genelist = c("DMD", "TTN", "CFTR", "NF1")
+#' )
+#'
+#' # Research mode with custom prefix
+#' cortar(
+#'   file = "research_samples.tsv",
+#'   mode = "research",
+#'   assembly = "hg19",
+#'   annotation = "UCSC",
+#'   paired = FALSE,
+#'   stranded = 0,
+#'   output_dir = "research_output",
+#'   genelist = c("GENE1", "GENE2"),
+#'   prefix = "cohort1_"
+#' )
+#'
+#' # With debug mode enabled
+#' cortar(
+#'   file = "samples.tsv",
+#'   mode = "default",
+#'   assembly = "hg38",
+#'   annotation = "UCSC",
+#'   paired = TRUE,
+#'   stranded = 2,
+#'   output_dir = "output",
+#'   debug = TRUE
+#' )
+#' }
 #'
 cortar <- function(file,
                    mode = "default",

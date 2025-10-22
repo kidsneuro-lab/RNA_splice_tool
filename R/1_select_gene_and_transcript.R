@@ -9,6 +9,7 @@
 #' @param assembly Assembly used for alignment: either `"hg38"` or `"hg19"`
 #' @param annotation  Annotation used for alignment: either `"UCSC"`or
 #'     `"1000genomes"`
+#' @param debug Debug parameter (path string or FALSE)
 #'
 #' @returns A list of GRanges for:
 #' * genes of interest
@@ -18,7 +19,34 @@
 #' @export
 #'
 #' @examples
-#' #### == COMING SOON == ####
+#' \dontrun{
+#' # Select genes with default (canonical) transcripts
+#' genes_tx <- selectGenesTranscripts(
+#'   genes = c("DMD", "TTN"),
+#'   assembly = "hg38",
+#'   annotation = "UCSC"
+#' )
+#'
+#' # Select specific transcript versions
+#' genes_tx <- selectGenesTranscripts(
+#'   genes = c("NM_004006.3", "NM_001267550.2"),
+#'   assembly = "hg38",
+#'   annotation = "UCSC"
+#' )
+#'
+#' # Mix of gene names and specific transcripts
+#' genes_tx <- selectGenesTranscripts(
+#'   genes = c("DMD", "NM_001267550.2"),
+#'   assembly = "hg19",
+#'   annotation = "1000genomes"
+#' )
+#'
+#' # Access components of the result
+#' genes.GRanges <- genes_tx[[1]]
+#' introns.GRanges <- genes_tx[[2]][[1]]
+#' introns_other_tx.GRanges <- genes_tx[[3]]
+#' introns_jx.GRanges <- genes_tx[[4]]
+#' }
 #'
 selectGenesTranscripts <- function(genes,
                                    assembly,
@@ -58,6 +86,7 @@ selectGenesTranscripts <- function(genes,
 #' @param genes A character vector of gene names and/or RefSeq transcript IDs
 #' @param refseq_assembly A data.table of RefSeq coding genes. Either:
 #'     `refseq_introns_exons_hg38` (default) or `refseq_introns_exons_hg19`
+#' @param debug Debug parameter (path string or FALSE)
 #'
 #' @returns A data.table with two columns `gene_name` and `tx`, with a
 #' row for each gene/transcript provided, containing:
@@ -68,7 +97,30 @@ selectGenesTranscripts <- function(genes,
 #' @export
 #'
 #' @examples
-#' #### == COMING SOON == ####
+#' \dontrun{
+#' # Extract canonical transcripts for gene names
+#' result <- tx_extraction(
+#'   genes = c("DMD", "TTN"),
+#'   refseq_assembly = refseq_introns_exons_hg38
+#' )
+#'
+#' # Extract specific transcript versions
+#' result <- tx_extraction(
+#'   genes = c("NM_004006.3", "NM_001267550.2"),
+#'   refseq_assembly = refseq_introns_exons_hg38
+#' )
+#'
+#' # Mix of gene names and transcript IDs
+#' result <- tx_extraction(
+#'   genes = c("DMD", "NM_001267550.2"),
+#'   refseq_assembly = refseq_introns_exons_hg19
+#' )
+#'
+#' # Result structure
+#' # gene_name        tx
+#' # DMD              NM_004006.3
+#' # TTN              NM_001267550.2
+#' }
 #'
 tx_extraction <- function(genes,
                           refseq_assembly = refseq_introns_exons_hg38,

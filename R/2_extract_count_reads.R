@@ -56,19 +56,8 @@ extractCountReads <- function(genes.GRanges,
                               debug) {
   message("Extracting and counting reads...")
 
-  if (assembly == "hg19") {
-    if (annotation == "UCSC") {
-      Genome_Assembly <- BSgenome.Hsapiens.UCSC.hg19::BSgenome.Hsapiens.UCSC.hg19
-    } else if (annotation == "1000genomes") {
-      Genome_Assembly <- BSgenome.Hsapiens.1000genomes.hs37d5::BSgenome.Hsapiens.1000genomes.hs37d5
-    }
-  } else if (assembly == "hg38") {
-    if (annotation == "UCSC"){
-      Genome_Assembly <- BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38
-    } else if (annotation == "NCBI"){
-      Genome_Assembly <- BSgenome.Hsapiens.NCBI.GRCh38::BSgenome.Hsapiens.NCBI.GRCh38
-    }
-  }
+  # Use cached genome assembly
+  Genome_Assembly <- get_genome_assembly(assembly, annotation)
 
   sj <- list()
   ir <- list()
