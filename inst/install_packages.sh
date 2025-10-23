@@ -26,7 +26,13 @@ cran_pkgs <- c(
   'magrittr',
   'openxlsx',
   'formattable',
-  'optparse'
+  'optparse',
+  'testthat',
+  'withr',
+  'lintr',
+  'covr',
+  'knitr',
+  'rmarkdown'
 )
 
 # check and install missing CRAN pkgs
