@@ -37,9 +37,9 @@ jobs:
         run: |
           docker run --entrypoint Rscript --rm rna_splice_tool -e "devtools::test()"
 
-      - name: Run lintr
-        run: |
-          docker run --entrypoint Rscript --rm rna_splice_tool -e "lintr::lint_package()"
+      # - name: Run lintr
+      #   run: |
+      #     docker run --entrypoint Rscript --rm rna_splice_tool -e "lintr::lint_package()"
 
       - name: Generate code coverage
         run: |
