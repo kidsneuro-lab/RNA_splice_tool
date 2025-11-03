@@ -1,5 +1,5 @@
 # Use the official R image
-FROM bioconductor/r-ver:3.21-R-4.5.1
+FROM bioconductor/r-ver:3.22-R-4.5.1
 
 # Install additional R packages
 COPY ./inst/install_packages.sh /tmp/install_packages.sh
