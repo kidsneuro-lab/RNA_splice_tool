@@ -39,3 +39,27 @@ get_coverage_threshold <- function(coverage_type) {
     return(as.numeric(coverage_type))
   }
 }
+
+#' Get BSgenome Object for Assembly and Annotation
+#'
+#' Internal helper that returns the correct BSgenome object for a supported
+#' assembly/annotation combination.
+#'
+#' @param assembly Character: "hg38" or "hg19"
+#' @param annotation Character: "UCSC", "1000genomes", or "NCBI"
+#'
+#' @return A BSgenome object
+#' @keywords internal
+get_genome_assembly <- function(assembly, annotation) {
+  if (assembly == "hg19" && annotation == "UCSC") {
+    return(BSgenome.Hsapiens.UCSC.hg19::BSgenome.Hsapiens.UCSC.hg19)
+  } else if (assembly == "hg19" && annotation == "1000genomes") {
+    return(BSgenome.Hsapiens.1000genomes.hs37d5::BSgenome.Hsapiens.1000genomes.hs37d5)
+  } else if (assembly == "hg38" && annotation == "UCSC") {
+    return(BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38)
+  } else if (assembly == "hg38" && annotation == "NCBI") {
+    return(BSgenome.Hsapiens.NCBI.GRCh38::BSgenome.Hsapiens.NCBI.GRCh38)
+  }
+
+  stop("Unsupported assembly/annotation combination: ", assembly, "/", annotation)
+}

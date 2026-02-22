@@ -1,5 +1,81 @@
 #' Compare Splicing Between Samples
 #'
+#' Internal helper that filters control samples by median canonical-splice
+#' coverage for the proband gene.
+#'
+#' @param events_dt Data.table containing annotated splicing events
+#' @param gene_name Character string of the proband gene
+#' @param ctrl_pct_cols Character vector of control pct columns
+#' @param ctrl_read_cols Character vector of control read-count columns
+#' @param coverage_type Character string of coverage type
+#'
+#' @return A named list containing filtered control column vectors
+#' @keywords internal
+filter_controls_by_coverage <- function(events_dt,
+                                        gene_name,
+                                        ctrl_pct_cols,
+                                        ctrl_read_cols,
+                                        coverage_type) {
+  if (length(ctrl_pct_cols) == 0 || length(ctrl_read_cols) == 0) {
+    return(list(
+      ctrl_pct_cols = ctrl_pct_cols,
+      ctrl_read_cols = ctrl_read_cols
+    ))
+  }
+
+  canon_splicing_counts <- events_dt[
+    gene == gene_name & annotated == "canonical" & SJ_IR == "SJ",
+    ..ctrl_read_cols
+  ]
+
+  coverage_threshold <- get_coverage_threshold(coverage_type)
+  control_medians <- sapply(canon_splicing_counts, median, na.rm = TRUE)
+  keep_controls <- !is.na(control_medians) & control_medians > coverage_threshold
+
+  list(
+    ctrl_pct_cols = ctrl_pct_cols[keep_controls],
+    ctrl_read_cols = ctrl_read_cols[keep_controls]
+  )
+}
+
+#' Identify Unique Splicing Events
+#'
+#' Determines which splicing events are present in family members but absent in
+#' controls (control average is 0 and family member value is non-zero).
+#'
+#' @param events_dt A data.table with splicing event data
+#' @param family_pct_cols Character vector of family pct column names
+#'
+#' @return Character vector indicating family uniqueness per event
+#' @keywords internal
+calculate_unique_events <- function(events_dt, family_pct_cols) {
+  unique_col <- character(nrow(events_dt))
+
+  for (i in seq_len(nrow(events_dt))) {
+    event_unique_count <- 0
+    for (member in family_pct_cols) {
+      control_is_zero <- !is.na(events_dt$controlavg[i]) &&
+        events_dt$controlavg[i] == 0
+      member_value <- events_dt[[member]][i]
+      member_has_signal <- !is.na(member_value) && member_value != 0
+
+      if (control_is_zero && member_has_signal) {
+        event_unique_count <- event_unique_count + 1
+      }
+    }
+
+    if (event_unique_count >= 1) {
+      unique_col[i] <- paste0(event_unique_count, "/", length(family_pct_cols))
+    } else {
+      unique_col[i] <- ""
+    }
+  }
+
+  return(unique_col)
+}
+
+#' Compare Splicing Between Samples
+#'
 #' Internal function that performs statistical comparisons of splicing events
 #' between test samples and controls. Calculates differences, standard deviations,
 #' and identifies unique events.
@@ -74,15 +150,15 @@ if (mode == "default" || mode == "panel") {
 
       #In default mode, add a filter to remove controls with a median coverage less than threshold over all canonical exons
       if(mode == "default"){
-        canon_splicing_counts <- all_splicing_events_sample[gene == gene_values[sample_number] &
-                                                            annotated == "canonical" &
-                                                            SJ_IR == "SJ", ..ctrlsreadcols]
-
-        coverage_threshold <- get_coverage_threshold(Sample_File$coverage[sample_number])
-        control_medians <- sapply(canon_splicing_counts, median, na.rm = TRUE)
-        keep_controls <- !is.na(control_medians) & control_medians > coverage_threshold
-        ctrlscols <- ctrlscols[keep_controls]
-        ctrlsreadcols <- ctrlsreadcols[keep_controls]
+        filtered_controls <- filter_controls_by_coverage(
+          events_dt = all_splicing_events_sample,
+          gene_name = gene_values[sample_number],
+          ctrl_pct_cols = ctrlscols,
+          ctrl_read_cols = ctrlsreadcols,
+          coverage_type = Sample_File$coverage[sample_number]
+        )
+        ctrlscols <- filtered_controls$ctrl_pct_cols
+        ctrlsreadcols <- filtered_controls$ctrl_read_cols
 
       }
       # Initialise various columns
@@ -125,26 +201,10 @@ if (mode == "default" || mode == "panel") {
         all_splicing_events_sample$controlsd * 4
 
       # Identify unique events
-      for (i in seq_len(nrow(all_splicing_events_sample))) {
-        event_unique_count <- 0
-        for (member in familycols) {
-          control_is_zero <- !is.na(all_splicing_events_sample$controlavg[i]) &&
-            all_splicing_events_sample$controlavg[i] == 0
-          member_value <- all_splicing_events_sample[, ..member][i]
-          member_has_signal <- !is.na(member_value) && member_value != 0
-          if (control_is_zero && member_has_signal) {
-            event_unique_count <- event_unique_count + 1
-          }
-        }
-        if (event_unique_count >= 1) {
-          all_splicing_events_sample$unique[i] <- paste(
-            event_unique_count, "/", length(familycols),
-            sep = ""
-          )
-        } else {
-          all_splicing_events_sample$unique[i] <- ""
-        }
-      }
+      all_splicing_events_sample$unique <- calculate_unique_events(
+        all_splicing_events_sample,
+        familycols
+      )
 
       # Order columns and sort by the greatest difference
       all_splicing_events_sample <- all_splicing_events_sample[order(

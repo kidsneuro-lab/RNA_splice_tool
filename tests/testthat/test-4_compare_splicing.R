@@ -141,3 +141,73 @@ test_that("compareSplicing rejects unsupported modes", {
     "Invalid mode"
   )
 })
+
+test_that("calculate_unique_events identifies unique events correctly", {
+  dt <- data.table(
+    controlavg = c(0, 0.5, 0),
+    pct_sample1 = c(0.3, 0.4, 0),
+    pct_sample2 = c(0.2, 0.1, 0)
+  )
+
+  result <- calculate_unique_events(dt, c("pct_sample1", "pct_sample2"))
+  expect_equal(result, c("2/2", "", ""))
+})
+
+test_that("calculate_unique_events handles empty data.table", {
+  dt <- data.table(controlavg = numeric(0), pct_s1 = numeric(0))
+  result <- calculate_unique_events(dt, "pct_s1")
+  expect_equal(result, character(0))
+})
+
+test_that("calculate_unique_events handles partial family uniqueness", {
+  dt <- data.table(
+    controlavg = c(0),
+    pct_sample1 = c(0.3),
+    pct_sample2 = c(0)
+  )
+
+  result <- calculate_unique_events(dt, c("pct_sample1", "pct_sample2"))
+  expect_equal(result, "1/2")
+})
+
+test_that("filter_controls_by_coverage removes low-coverage controls", {
+  dt <- data.table(
+    gene = c("EMD", "EMD", "EMD", "DMD"),
+    annotated = rep("canonical", 4),
+    SJ_IR = rep("SJ", 4),
+    count_ctrl1 = c(100, 120, 110, 5),
+    count_ctrl2 = c(10, 5, 8, 500)
+  )
+
+  result <- filter_controls_by_coverage(
+    events_dt = dt,
+    gene_name = "EMD",
+    ctrl_pct_cols = c("pct_ctrl1", "pct_ctrl2"),
+    ctrl_read_cols = c("count_ctrl1", "count_ctrl2"),
+    coverage_type = "het"
+  )
+
+  expect_equal(result$ctrl_pct_cols, "pct_ctrl1")
+  expect_equal(result$ctrl_read_cols, "count_ctrl1")
+})
+
+test_that("filter_controls_by_coverage keeps all controls when threshold is 0", {
+  dt <- data.table(
+    gene = rep("EMD", 2),
+    annotated = rep("canonical", 2),
+    SJ_IR = rep("SJ", 2),
+    count_ctrl1 = c(5, 3),
+    count_ctrl2 = c(2, 1)
+  )
+
+  result <- filter_controls_by_coverage(
+    events_dt = dt,
+    gene_name = "EMD",
+    ctrl_pct_cols = c("pct_ctrl1", "pct_ctrl2"),
+    ctrl_read_cols = c("count_ctrl1", "count_ctrl2"),
+    coverage_type = ""
+  )
+
+  expect_equal(length(result$ctrl_pct_cols), 2)
+  expect_equal(length(result$ctrl_read_cols), 2)
+})
