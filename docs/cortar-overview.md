@@ -65,7 +65,7 @@ Cortar supports three distinct analysis modes, each designed for different resea
 
 ### 1. Default Mode
 **Purpose**: Single gene analysis for individual patients/probands
-- Analyzes one specific gene per test sample
+- Analyses one specific gene per test sample
 - Compares test samples to family-unrelated controls
 - Excludes controls with the same gene under investigation
 - Applies coverage filtering for quality control
@@ -74,7 +74,7 @@ Cortar supports three distinct analysis modes, each designed for different resea
 
 ### 2. Panel Mode  
 **Purpose**: Multi-gene panel analysis for targeted gene sets
-- Analyzes multiple genes simultaneously using an external genelist
+- Analyses multiple genes simultaneously using an external genelist
 - Compares test samples to family-unrelated controls (any gene background)
 - Suitable for gene panel sequencing analysis
 - Uses provided genelist parameter for gene selection
@@ -83,12 +83,38 @@ Cortar supports three distinct analysis modes, each designed for different resea
 
 ### 3. Research Mode
 **Purpose**: Population-level analysis and research studies
-- Analyzes all samples without test/control distinction
+- Analyses all samples without test/control distinction
 - Calculates population statistics across all samples
 - No family-based filtering
 - Suitable for cohort studies and population genetics
 
 [→ Detailed Research Mode Documentation](research-mode.md)
+
+## Mode Workflows at a Glance
+
+### Default Mode Workflow
+
+```mermaid
+flowchart LR
+    A[Input: samplefile plus per-test gene assignments] --> B[Logic: analyse one gene per test sample with unrelated, non-matching-gene controls]
+    B --> C[Output: per-test sample abnormal splicing report]
+```
+
+### Panel Mode Workflow
+
+```mermaid
+flowchart LR
+    A[Input: samplefile plus external panel genelist] --> B[Logic: analyse all panel genes for each test sample using unrelated controls]
+    B --> C[Output: per-test sample multi-gene panel report]
+```
+
+### Research Mode Workflow
+
+```mermaid
+flowchart LR
+    A[Input: cohort samplefile plus external research genelist] --> B[Logic: analyse all samples together and calculate population-level splice metrics]
+    B --> C[Output: cohort-wide splicing landscape and summary statistics]
+```
 
 ## General Workflow
 
@@ -115,7 +141,7 @@ Cortar generates several output files depending on the mode:
 ### Common Outputs
 - **Excel reports**: Detailed splicing analysis results
 - **TSV files**: Tab-separated values for further analysis
-- **PDF plots**: Visualization of splicing patterns (when applicable)
+- **PDF plots**: Visualisation of splicing patterns (when applicable)
 
 ### Mode-Specific Outputs
 - **Default/Panel**: Per-sample reports with family comparisons

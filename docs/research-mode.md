@@ -2,11 +2,11 @@
 
 ## Overview
 
-Research mode is designed for **population-level analysis** and **exploratory research studies** where all samples are treated equally without test/control distinctions. This mode calculates population statistics across all samples and is ideal for cohort studies, population genetics research, and splicing landscape characterization.
+Research mode is designed for **population-level analysis** and **exploratory research studies** where all samples are treated equally without test/control distinctions. This mode calculates population statistics across all samples and is ideal for cohort studies, population genetics research, and splicing landscape characterisation.
 
 ## Key Characteristics
 
-- **No test/control distinction**: All samples are analyzed equally
+- **No test/control distinction**: All samples are analysed equally
 - **Population-level statistics**: Calculates means, standard deviations across entire cohort
 - **External gene specification**: Uses `genelist` parameter for gene selection
 - **No family filtering**: Includes all samples regardless of family relationships
@@ -15,7 +15,7 @@ Research mode is designed for **population-level analysis** and **exploratory re
 ## When to Use Research Mode
 
 - Population genetics studies investigating splicing variation
-- Cohort studies characterizing splicing landscapes
+- Cohort studies characterising splicing landscapes
 - Method development and validation studies  
 - Exploratory analysis of new datasets
 - Reference population establishment
@@ -27,7 +27,7 @@ In research mode, the samplefile structure is simplified:
 - **sampletype**: Not used (all samples treated equally)
 - **genes**: Not used for analysis (can be any value)
 - **familyID**: Not used for filtering (can be any value)
-- **genelist parameter**: Defines genes to analyze across all samples
+- **genelist parameter**: Defines genes to analyse across all samples
 
 ### Example Samplefile
 ```
@@ -53,6 +53,19 @@ cortar(
 ```
 
 ## Workflow
+
+### Core Workflow (Input → Logic → Output)
+
+```mermaid
+flowchart LR
+    A[Input: cohort samplefile plus external genelist] --> B[Logic: include all samples equally, no test/control or family filters, quantify events and aggregate cohort-wide population metrics]
+    B --> C[Output: population-level means, SDs, and event counts across the cohort]
+    C --> D[Files: combined population TSV and per-gene population PDF plots]
+
+    style A fill:#e1f5fe
+    style B fill:#fff3e0
+    style D fill:#c8e6c9
+```
 
 ### Detailed Research Mode Pipeline
 
@@ -95,9 +108,9 @@ flowchart TD
 
 ### Population-Level Gene Analysis
 1. **External gene list**: All genes specified in `genelist` parameter
-2. **Cohort-wide analysis**: Same genes analyzed across entire population
+2. **Cohort-wide analysis**: Same genes analysed across entire population
 3. **No individual gene assignment**: Unlike default mode, no per-sample gene specification
-4. **Comprehensive coverage**: All genes analyzed for all samples
+4. **Comprehensive coverage**: All genes analysed for all samples
 
 ## Statistical Analysis Approach
 
@@ -118,7 +131,7 @@ Research mode calculates fundamentally different statistics compared to other mo
 ### Data Processing
 1. **Inclusive analysis**: All samples contribute to statistics
 2. **Event-level aggregation**: Statistics calculated per splicing event
-3. **Gene-level summaries**: Population parameters summarized per gene
+3. **Gene-level summaries**: Population parameters summarised per gene
 4. **Quality filtering**: Standard read count and coverage filters still apply
 
 ## Output Files
@@ -162,7 +175,7 @@ Research mode does not include:
 ## Research Applications
 
 ### Population Genetics Studies
-- **Splicing variation characterization**: Map normal splicing variation
+- **Splicing variation characterisation**: Map normal splicing variation
 - **Population stratification**: Identify population-specific splicing patterns
 - **Allele frequency estimation**: Estimate frequencies of splicing alleles
 - **Evolutionary analysis**: Study splicing conservation across populations
@@ -175,8 +188,8 @@ Research mode does not include:
 
 ### Method Development
 - **Algorithm validation**: Test splicing detection algorithms
-- **Parameter optimization**: Optimize analysis parameters
-- **Batch effect assessment**: Identify and correct technical artifacts
+- **Parameter optimisation**: Optimise analysis parameters
+- **Batch effect assessment**: Identify and correct technical artefacts
 - **Cross-platform comparison**: Compare different sequencing platforms
 
 ## Best Practices
@@ -184,7 +197,7 @@ Research mode does not include:
 ### Study Design
 - **Sample size**: Include adequate numbers for population statistics (recommended: >100)
 - **Population representation**: Ensure diverse, representative sampling
-- **Technical standardization**: Minimize batch effects across samples
+- **Technical standardisation**: Minimise batch effects across samples
 - **Metadata collection**: Collect relevant demographic and technical variables
 
 ### Data Quality
@@ -207,9 +220,9 @@ Research mode does not include:
 3. **Large dataset complexity**: Use efficient computing resources
 4. **Storage requirements**: Plan for large output files
 
-### Performance Optimization
+### Performance Optimisation
 - **Memory management**: Research mode can require significant memory
-- **Parallel processing**: Consider parallelization for large cohorts
+- **Parallel processing**: Consider parallelisation for large cohorts
 - **Data storage**: Implement efficient data storage solutions
 - **Computational resources**: Ensure adequate computing infrastructure
 
@@ -283,7 +296,7 @@ cortar(
 - **Coverage uniformity**: Ensure consistent data quality across samples
 - **Distribution normality**: Assess whether splicing follows expected distributions
 - **Outlier patterns**: Investigate samples with unusual splicing profiles
-- **Technical artifacts**: Identify and address systematic biases
+- **Technical artefacts**: Identify and address systematic biases
 
 ## See Also
 
