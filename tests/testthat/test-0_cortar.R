@@ -25,3 +25,14 @@ test_that("cortar produces correct output and runs successfully", {
 
   expect_equal(actual, expected)
 })
+
+test_that("cortar_batch does not depend on caller debug symbol", {
+  clean_env <- new.env(parent = baseenv())
+  clean_env$cortar_batch <- cortar_batch
+  clean_env$batch_dir <- withr::local_tempdir()
+
+  expect_identical(formals(cortar_batch)$debug, FALSE)
+  expect_no_error(
+    evalq(cortar_batch(folder = batch_dir, pattern = "\\.tsv$"), envir = clean_env)
+  )
+})

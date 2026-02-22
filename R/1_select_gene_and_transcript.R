@@ -75,7 +75,7 @@ tx_extraction <- function(genes,
                           debug = "") {
   genes_tx <- data.table("gene_name" = character(), "tx" = character())
 
-  for (gene in seq(1, length(genes))) {
+  for (gene in seq_along(genes)) {
     if (length(grep("NM_[0-9]+\\.[0-9]+", genes[gene])) > 0) {
       tx <- stringr::str_extract_all(genes[gene], "NM_[0-9]+\\.[0-9]+")[[1]][1]
       if(tx %in% refseq_assembly[,tx_version_id]){

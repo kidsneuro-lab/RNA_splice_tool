@@ -54,11 +54,8 @@ cortar <- function(file,
   }
 
   # mode
-  if (mode != "default") {
-    if (mode == "panel" | mode == "research") {
-    } else {
-      stop("'", mode, "' is not an available cortar mode ('default','panel','research')")
-    }
+  if (mode %nin% c("default", "panel", "research")) {
+    stop("'", mode, "' is not an available cortar mode ('default','panel','research')")
   }
 
   # assembly
@@ -243,11 +240,11 @@ cortar_batch <- function(folder,
                            output_dir = "~",
                            genelist = NULL,
                            prefix = "",
-                           debug = debug,
+                           debug = FALSE,
                            ria = TRUE){
   batches_in <- sapply(list.files(folder, pattern = pattern),function(x){paste0(folder,"/",x)})
   batches_out <- sapply(list.files(folder, pattern = pattern),function(x){paste0(output_dir,"/",strsplit(x,"\\.")[[1]][1])})
-  for(batch in seq(1,length(batches_in))){
+  for(batch in seq_along(batches_in)){
     if(!dir.exists(batches_out[batch])){
       message("'",batches_out[batch],"' created.")
       dir.create(batches_out[batch])
@@ -328,9 +325,6 @@ cortar_batch <- function(folder,
 #' @export
 subsetBamfiles <- function(genes, hg, overhang = 1000){
 
-  # Read in cortar samplefile
-  # file <- data.table::fread(file)
-
   # Select correct gene annotation for chosen assembly
   if (hg == 38) {
     Refseq_Genes <- refseq_introns_exons_hg38
@@ -344,7 +338,7 @@ subsetBamfiles <- function(genes, hg, overhang = 1000){
 
   gene_coordinates <- list()
 
-  for (gene_counter in seq(1, length(genes))) {
+  for (gene_counter in seq_along(genes)) {
     gene <- genes[gene_counter]
 
     if (grepl("^ENSG", gene)) {

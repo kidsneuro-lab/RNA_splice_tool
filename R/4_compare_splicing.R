@@ -44,7 +44,7 @@ compareSplicing <- function(all_splicing_events, Sample_File, mode, debug) {
 
 if(mode == "default" | mode == "panel"){
   #--Compare splicing between test and controls and Generate Report--------------
-  for (sample_number in seq(1, nrow(Sample_File))) {
+  for (sample_number in seq_len(nrow(Sample_File))) {
 
     # Initialise new copy of the all_splicing_events dataset
     all_splicing_events_sample <- all_splicing_events
@@ -109,7 +109,7 @@ if(mode == "default" | mode == "panel"){
       }
 
       # Difference between proband and control average
-      all_splicing_events_sample$difference <- all_splicing_events_sample[, paste0("pct_", proband), with = F] -
+      all_splicing_events_sample$difference <- all_splicing_events_sample[, paste0("pct_", proband), with = FALSE] -
         all_splicing_events_sample$controlavg
 
       # Compute the standard deviation thresholds
@@ -125,7 +125,7 @@ if(mode == "default" | mode == "panel"){
         all_splicing_events_sample$controlsd * 4
 
       # Identify unique events
-      for (i in seq(1, nrow(all_splicing_events_sample))) {
+      for (i in seq_len(nrow(all_splicing_events_sample))) {
         event_unique_count <- 0
         for (member in familycols) {
           control_is_zero <- !is.na(all_splicing_events_sample$controlavg[i]) &&
@@ -149,7 +149,7 @@ if(mode == "default" | mode == "panel"){
       # Order columns and sort by the greatest difference
       all_splicing_events_sample <- all_splicing_events_sample[order(
         abs(all_splicing_events_sample$difference),
-        decreasing = T
+        decreasing = TRUE
       ),
       c(
         "assembly",
@@ -177,7 +177,7 @@ if(mode == "default" | mode == "panel"){
         "intron_no",
         "SJ_IR"
       ),
-      with = F
+      with = FALSE
       ]
       comparisons[[sample_number]] <- all_splicing_events_sample
     }}
@@ -201,7 +201,7 @@ if(mode == "default" | mode == "panel"){
 
     all_splicing_events_sample <- all_splicing_events_sample[order(
       gene,controlavg,
-      decreasing = F
+      decreasing = FALSE
     ),
     c(
       "assembly",
@@ -221,7 +221,7 @@ if(mode == "default" | mode == "panel"){
       "intron_no",
       "SJ_IR"
     ),
-    with = F
+    with = FALSE
     ]
     comparisons <- all_splicing_events_sample
   }

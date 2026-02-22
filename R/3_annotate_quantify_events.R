@@ -25,7 +25,7 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
   events_by_intron <- list()
 
   # Extract and Annotate All Events at Canonical Junctions
-  for(query_intron in seq(1, nrow(introns))) {
+  for(query_intron in seq_len(nrow(introns))) {
     intron_name <- paste0(introns$gene_name[query_intron], " intron ", introns$region_no[query_intron])
 
     # For all samples extract all the reads which overlap the query intron jxns
@@ -129,7 +129,7 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
 eventAnnotation <- function(query_intron.dt){
     event <- 1
     events <- c()
-    for(event in seq(1,nrow(query_intron.dt))){
+    for(event in seq_len(nrow(query_intron.dt))){
         #Extract intron start and end ranges and strand
         exon_range_start <- query_intron.dt[event,intron_jxn_start]
         exon_range_end <- query_intron.dt[event,intron_jxn_end]
@@ -206,7 +206,7 @@ framed <- function(query_intron.dt, assembly){
     }
 
     frame <- c()
-    for(event in seq(1,nrow(query_intron.dt))){
+    for(event in seq_len(nrow(query_intron.dt))){
         if(query_intron.dt$SJ_IR[event] == "SJ"){
             #is the start/end annotated
             #both annotated
@@ -245,5 +245,4 @@ framed <- function(query_intron.dt, assembly){
     }
     return(frame)
 }
-
 

@@ -16,7 +16,7 @@ generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug
     message("Generating reports...")
 
   if(mode == "default" | mode == "panel"){
-    for (sample_number in seq(1, nrow(Sample_File))) {
+    for (sample_number in seq_len(nrow(Sample_File))) {
       # Initialise new copy of the all_splicing_events dataset
       if (Sample_File$sampletype[sample_number] == "test") {
         all_splicing_events_sample <- comparisons[[sample_number]]
@@ -29,10 +29,9 @@ generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug
         familyreadcols <- paste0("count_", family)
 
         # Set report outputs and parameters
-        report <- T
-        splicing_diagnostics_report <- F
-        full_all_genes_report <- T
-        figure <- F
+        report <- TRUE
+        full_all_genes_report <- TRUE
+        figure <- FALSE
 
         if(mode == "panel"){
           testgenes <- unique(all_splicing_events_sample$gene)
@@ -41,7 +40,6 @@ generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug
           testgenes <- unique(Sample_File$genes[sample_number])
           testgenename <- unique(Sample_File$genes[sample_number])
         }
-        # will need a for loop
         if(figure == TRUE){
           for(gene in testgenes){
             normalSpliceMap(all_splicing_events_sample, familycols[1], proband, gene, export = Export, mode = mode, prefix = prefix)

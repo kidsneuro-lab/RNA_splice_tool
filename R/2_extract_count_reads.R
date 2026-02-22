@@ -77,12 +77,11 @@ extractCountReads <- function(genes.GRanges,
   param <- Rsamtools::ScanBamParam(
     which = genes.GRanges, flag = Rsamtools::scanBamFlag(
       isDuplicate = FALSE,
-      isSecondaryAlignment = FALSE,
-      # isPaired = T
+      isSecondaryAlignment = FALSE
     )
   )
 
-  for (sample_number in 1:length(sample_names)) {
+  for (sample_number in seq_along(sample_names)) {
     sample_name <- sample_names[sample_number]
     message("\t", sample_name)
 
@@ -122,7 +121,7 @@ extractCountReads <- function(genes.GRanges,
   }
 
 }else if(input == "sj"){
-  for (sample_number in 1:length(sample_names)) {
+  for (sample_number in seq_along(sample_names)) {
     sample_name <- sample_names[sample_number]
     message("\t", sample_name)
 
@@ -203,7 +202,7 @@ extractCountReads <- function(genes.GRanges,
     GenomicRanges::mcols(combined_ir)[c("score", "intron_no", "genes")] <- NULL
 
 
-  for (sample_number in 1:length(sample_names)) {
+  for (sample_number in seq_along(sample_names)) {
     sample_name <- sample_names[sample_number]
 
     GenomicRanges::mcols(combined_sj)$SJ_IR <- "SJ"
