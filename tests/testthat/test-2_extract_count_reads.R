@@ -1,19 +1,9 @@
 library(testthat)
 library(cortar)
 
-test_that("read_sj_sample remaps strand encodings and adjusts IR starts", {
-  sj_file <- tempfile(fileext = ".tab")
-  ir_file <- tempfile(fileext = ".bed")
-
-  writeLines(
-    c(
-      "chr1\t100\t200\t0\t0\t0\t11\t0\t0",
-      "chr1\t210\t300\t1\t0\t0\t12\t0\t0",
-      "chr1\t320\t410\t2\t0\t0\t13\t0\t0"
-    ),
-    sj_file
-  )
-  writeLines("chr1\t300\t400\tir_1\t7\t+", ir_file)
+test_that("read_sj_sample remaps strand encodings and adjusts BED coordinates", {
+  sj_file <- test_path("data", "input", "mock_sj.out.tab")
+  ir_file <- test_path("data", "input", "mock_ir.bed")
 
   genes.GRanges <- GenomicRanges::GRanges(
     seqnames = "chr1",
@@ -35,14 +25,14 @@ test_that("read_sj_sample remaps strand encodings and adjusts IR starts", {
 
   expect_equal(length(sample_reads$sj), 3L)
   expect_equal(as.character(BiocGenerics::strand(sample_reads$sj)), c("*", "+", "-"))
+  expect_equal(GenomicRanges::start(sample_reads$ir), 301L)
+  expect_equal(GenomicRanges::end(sample_reads$ir), 400L)
   expect_equal(GenomicRanges::mcols(sample_reads$ir)$ir_score, 7)
 })
 
 test_that("read_sj_sample handles empty SJ and IR files", {
-  sj_file <- tempfile(fileext = ".tab")
-  ir_file <- tempfile(fileext = ".bed")
-  file.create(sj_file)
-  file.create(ir_file)
+  sj_file <- test_path("data", "input", "mock_sj_empty.out.tab")
+  ir_file <- test_path("data", "input", "mock_ir_empty.bed")
 
   genes.GRanges <- GenomicRanges::GRanges()
   introns.GRanges <- GenomicRanges::GRanges()
