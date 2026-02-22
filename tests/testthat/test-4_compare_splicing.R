@@ -170,6 +170,17 @@ test_that("calculate_unique_events handles partial family uniqueness", {
   expect_equal(result, "1/2")
 })
 
+test_that("calculate_unique_events ignores NA family values", {
+  dt <- data.table(
+    controlavg = c(0, 0, NA_real_),
+    pct_sample1 = c(NA_real_, 0.4, 0.2),
+    pct_sample2 = c(0.1, NA_real_, 0.1)
+  )
+
+  result <- calculate_unique_events(dt, c("pct_sample1", "pct_sample2"))
+  expect_equal(result, c("1/2", "1/2", ""))
+})
+
 test_that("filter_controls_by_coverage removes low-coverage controls", {
   dt <- data.table(
     gene = c("EMD", "EMD", "EMD", "DMD"),

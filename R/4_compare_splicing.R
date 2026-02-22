@@ -49,29 +49,24 @@ filter_controls_by_coverage <- function(events_dt,
 #' @return Character vector indicating family uniqueness per event
 #' @keywords internal
 calculate_unique_events <- function(events_dt, family_pct_cols) {
-  unique_col <- character(nrow(events_dt))
-
-  for (i in seq_len(nrow(events_dt))) {
-    event_unique_count <- 0
-    for (member in family_pct_cols) {
-      control_is_zero <- !is.na(events_dt$controlavg[i]) &&
-        events_dt$controlavg[i] == 0
-      member_value <- events_dt[[member]][i]
-      member_has_signal <- !is.na(member_value) && member_value != 0
-
-      if (control_is_zero && member_has_signal) {
-        event_unique_count <- event_unique_count + 1
-      }
-    }
-
-    if (event_unique_count >= 1) {
-      unique_col[i] <- paste0(event_unique_count, "/", length(family_pct_cols))
-    } else {
-      unique_col[i] <- ""
-    }
+  n_events <- nrow(events_dt)
+  n_family <- length(family_pct_cols)
+  if (n_events == 0 || n_family == 0) {
+    return(character(n_events))
   }
 
-  return(unique_col)
+  family_matrix <- as.matrix(events_dt[, ..family_pct_cols])
+  member_has_signal <- !is.na(family_matrix) & family_matrix != 0
+  control_is_zero <- !is.na(events_dt$controlavg) & events_dt$controlavg == 0
+  control_is_zero_matrix <- matrix(control_is_zero, nrow = n_events, ncol = n_family)
+
+  unique_counts <- rowSums(control_is_zero_matrix & member_has_signal)
+
+  return(ifelse(
+    unique_counts >= 1,
+    paste0(unique_counts, "/", n_family),
+    ""
+  ))
 }
 
 #' Compare Splicing Between Samples
