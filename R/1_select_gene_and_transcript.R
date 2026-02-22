@@ -43,10 +43,10 @@ selectGenesTranscripts <- function(genes,
   introns_jx.GRanges <- introns_jx_to_GRange(gene_tx, assembly, annotation, Refseq_Genes, debug)
 
   return(list(
-    genes.GRanges,
-    introns.GRanges,
-    introns_other_tx.GRanges,
-    unlist(introns_jx.GRanges)
+    genes = genes.GRanges,
+    introns = introns.GRanges,
+    introns_other_tx = introns_other_tx.GRanges,
+    junctions = unlist(introns_jx.GRanges)
   ))
 }
 
@@ -195,7 +195,7 @@ introns_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, debug
     fwrite(as.data.table(introns),paste0(debug,"/","3_introns_to_GRange_introns.tsv"), sep = "\t")
   }
 
-  return(list(introns.GRanges, introns))
+  return(list(granges = introns.GRanges, metadata = introns))
 }
 
 #' Convert Introns from Other Transcripts to GRanges Object
@@ -287,5 +287,5 @@ introns_jx_to_GRange <- function(gene_tx, assembly, annotation, Refseq_Genes, de
     fwrite(as.data.table(intron_ends.GRanges),paste0(debug,"/","5_introns_jx_to_GRange_ends.tsv"), sep = "\t")
   }
 
-  return(list(intron_starts.GRanges, intron_ends.GRanges))
+  return(list(starts = intron_starts.GRanges, ends = intron_ends.GRanges))
 }

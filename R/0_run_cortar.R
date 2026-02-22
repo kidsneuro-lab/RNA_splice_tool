@@ -117,7 +117,7 @@ cortar <- function(file,
   }
 
   # Initialise debug directory
-  if(debug == TRUE){
+  if (isTRUE(debug)) {
     debug <- paste0(output_dir,"debug")
     message(paste0("RUNNING IN DEBUG MODE! All output will be saved to: '", debug,"'"))
     message("")
@@ -139,7 +139,7 @@ cortar <- function(file,
 
   # Select genes and transcripts of interest
   # A genelist must be provided for panel or research mode
-  if (mode == "panel" | mode == "research") {
+  if (mode == "panel" || mode == "research") {
     genes_tx <- selectGenesTranscripts(
       genes = genelist,
       assembly = assembly,
@@ -160,10 +160,10 @@ cortar <- function(file,
 
   # Reads for the genes and transcripts of interest are extracted and counted
   reads <- extractCountReads(
-    genes.GRanges = genes_tx[[1]],
-    introns.GRanges = genes_tx[[2]][[1]],
-    intron_starts.GRanges = genes_tx[[4]][[1]],
-    intron_ends.GRanges = genes_tx[[4]][[2]],
+    genes.GRanges = genes_tx$genes,
+    introns.GRanges = genes_tx$introns$granges,
+    intron_starts.GRanges = genes_tx$junctions$starts,
+    intron_ends.GRanges = genes_tx$junctions$ends,
     bamfiles = file$bamfile,
     sjfiles = file$sjfile,
     irfiles = file$irfile,
@@ -180,9 +180,9 @@ cortar <- function(file,
   events <- annotateQuantifyEvents(
     ids = file$sampleID,
     combined_sj = reads,
-    introns.GRanges = genes_tx[[2]][[1]],
-    introns_other_tx.GRanges = genes_tx[[3]],
-    introns = genes_tx[[2]][[2]],
+    introns.GRanges = genes_tx$introns$granges,
+    introns_other_tx.GRanges = genes_tx$introns_other_tx,
+    introns = genes_tx$introns$metadata,
     assembly = assembly,
     debug = debug,
     ria = ria

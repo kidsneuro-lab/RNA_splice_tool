@@ -85,12 +85,12 @@ extractCountReads <- function(genes.GRanges,
     sample_name <- sample_names[sample_number]
     message("\t", sample_name)
 
-    if (paired == FALSE) {
+    if (!paired) {
       alignment <- GenomicAlignments::readGAlignments(
         file = bamfiles[sample_number],
         param = param
       )
-    } else if (paired == TRUE) {
+    } else {
       alignment <- GenomicAlignments::readGAlignmentPairs(
         file = bamfiles[sample_number],
         param = param,

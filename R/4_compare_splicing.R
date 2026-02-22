@@ -42,7 +42,7 @@ compareSplicing <- function(all_splicing_events, Sample_File, mode, debug) {
     family_values <- Sample_File[[family_col]]
     gene_values <- Sample_File[[gene_col]]
 
-if(mode == "default" | mode == "panel"){
+if (mode == "default" || mode == "panel") {
   #--Compare splicing between test and controls and Generate Report--------------
   for (sample_number in seq_len(nrow(Sample_File))) {
 

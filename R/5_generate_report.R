@@ -15,7 +15,7 @@
 generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug) {
     message("Generating reports...")
 
-  if(mode == "default" | mode == "panel"){
+  if (mode == "default" || mode == "panel") {
     for (sample_number in seq_len(nrow(Sample_File))) {
       # Initialise new copy of the all_splicing_events dataset
       if (Sample_File$sampletype[sample_number] == "test") {
@@ -40,14 +40,14 @@ generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug
           testgenes <- unique(Sample_File$genes[sample_number])
           testgenename <- unique(Sample_File$genes[sample_number])
         }
-        if(figure == TRUE){
+        if (isTRUE(figure)) {
           for(gene in testgenes){
             normalSpliceMap(all_splicing_events_sample, familycols[1], proband, gene, export = Export, mode = mode, prefix = prefix)
           }
         }
         # Generate filtered excel spreadsheet +/- summary html
         # Excel spreadsheet
-        if (report == TRUE) {
+        if (isTRUE(report)) {
           generate.excel(all_splicing_events_sample[gene %in% testgenes],
             length(familycols),
             gene = testgenename,
@@ -56,7 +56,7 @@ generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug
             prefix = prefix
           )
         }
-        if (full_all_genes_report == TRUE) {
+        if (isTRUE(full_all_genes_report)) {
           data.table::fwrite(all_splicing_events_sample,
             file = paste0(
               Export, "/",prefix,Sample_File$sampleID[sample_number], "_", testgenename, "_combined_full",
@@ -109,7 +109,7 @@ normalSpliceMap <- function(table, familycols, proband, genes, export, mode, pre
 
     filtered_table <- as.data.table(table[SJ_IR == "SJ" & annotated == 'canonical' & gene == genes])
 
-    if(mode == "default" | mode == "panel"){
+    if (mode == "default" || mode == "panel") {
       probpct <- unlist(as.vector(filtered_table[, ..familycols]))
       probcolour <- "red"
     }else if (mode == "research"){
