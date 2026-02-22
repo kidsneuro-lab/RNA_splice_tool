@@ -899,3 +899,188 @@ For a gradual approach with minimal risk:
 5. **PR 5:** Tier 3 items (3.3–3.4) + Tier 6.2 — extract helpers and add tests for `extractCountReads`
 6. **PR 6:** Tier 4 items (4.1–4.3) — vectorise loops (use new tests from PR 4 to validate)
 7. **PR 7:** Tier 6.3 — report generation tests
+
+---
+
+## Round 2 — Additional Recommendations (Post-Implementation Re-Review)
+
+These are **new** recommendations identified after reviewing the current codebase state (after the original recommendations were implemented).
+
+### R2.1 Normalise Samplefile Schema Once at Pipeline Entry
+
+**Files:** `R/0_run_cortar.R` (line 109), `R/4_compare_splicing.R` (lines 97–114), `R/5_generate_report.R` (lines 24–26, 40–41)
+
+**Problem:** `compareSplicing()` now supports both `family`/`familyID` and `gene`/`genes`, but `generateReport()` still directly assumes `family` and `genes`. This creates schema drift where one stage is robust and the next is brittle.
+
+**Refactor:**
+1. Add `normalize_samplefile_schema()` in `R/utils.R` that:
+   - copies `familyID -> family` when needed
+   - copies `gene -> genes` (or the reverse, consistently)
+   - validates required columns (`sampleID`, `sampletype`, family/gene aliases, etc.)
+2. Call it once in `cortar()` immediately after reading the samplefile.
+3. Remove duplicated family/gene alias logic from downstream functions.
+
+**Benefits:** Better maintainability, fewer silent assumptions, easier test fixtures.
+
+**Verification:**
+- Add tests where samplefiles contain only `familyID` and only `gene`.
+- Ensure `compareSplicing()` and `generateReport()` both pass without fixture-side column patching.
+
+---
+
+### R2.2 Remove Interactive Prompts from Core Runtime Paths
+
+**Files:** `R/0_run_cortar.R` (lines 79–95), `R/1_select_gene_and_transcript.R` (lines 139–153)
+
+**Problem:** `cortar()` and `gene_to_GRange()` prompt via `readline()`. This blocks non-interactive execution (CI, batch jobs, containers, workflow runners).
+
+**Refactor:**
+1. Replace output-dir prompt with deterministic behaviour:
+   - either `dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)` and continue, or
+   - controlled by explicit argument (e.g., `create_output_dir = TRUE/FALSE`).
+2. Replace interactive invalid-gene prompt in `gene_to_GRange()` with explicit policy argument (e.g., `strict_genes = TRUE`) and `stop()`/`warning()` behavior.
+
+**Benefits:** Improved automation compatibility and predictable failure modes.
+
+**Verification:**
+- Add tests using `withr::local_options(list(warn = 2))` and `testthat::local_reproducible_output()`.
+- Run package tests in non-interactive mode (`Rscript -e "devtools::test()"`).
+
+---
+
+### R2.3 Fix IR Overlap Indexing and Deduplicate Count-Merge Logic
+
+**File:** `R/2_extract_count_reads.R` (lines 124–132)
+
+**Problem:** SJ and IR count merges use similar overlap logic, but the IR path indexes `combined_ir` with `queryHits()` instead of `subjectHits()` (line 131). This is fragile and can mis-assign counts when order differs.
+
+**Refactor:**
+1. Extract shared helper:
+   - `assign_overlap_counts(combined_gr, sample_gr, count_col, score_col)`
+2. Inside helper, always map:
+   - target (`combined_gr`) using `subjectHits()`
+   - source (`sample_gr`) using `queryHits()`
+3. Use helper for both SJ and IR branches.
+
+**Benefits:** Correctness, less duplicated logic, lower regression risk.
+
+**Verification:**
+- Add a test where `sample_gr` and `combined_gr` are intentionally in different order and ensure counts map correctly.
+
+---
+
+### R2.4 Rework `read_sj_sample()` IR Scoring to Align by Intron ID
+
+**File:** `R/2_extract_count_reads.R` (lines 285–301)
+
+**Problem:** IR start/end scores are currently converted to vectors and averaged by position, not by intron identity. If overlap order or cardinality differs, scores can be assigned to the wrong intron.
+
+**Refactor:**
+1. Initialise `start_scores` and `end_scores` with length `length(introns.GRanges)`.
+2. Populate by overlap mapping using `subjectHits(ir_*_qryhits)` as intron index.
+3. Compute IR score with explicit NA policy:
+   - e.g., mean of available sides when one side missing, or `NA` if either missing (choose and document).
+
+**Benefits:** Correctness, simpler mental model, safer for sparse/partial IR inputs.
+
+**Verification:**
+- Add tests with:
+  - multiple introns in non-sorted order
+  - one-sided overlaps (start-only / end-only)
+  - duplicated overlap entries.
+
+---
+
+### R2.5 Precompute Overlap Maps in `annotateQuantifyEvents()` for Scale
+
+**File:** `R/3_annotate_quantify_events.R` (lines 28–74)
+
+**Problem:** Inside the per-intron loop, multiple `findOverlaps()` calls repeatedly scan the same objects. This is expensive for larger gene panels and research-mode datasets.
+
+**Refactor:**
+1. Precompute global overlap objects once before the loop:
+   - intron-to-combined `start`, `end`, and optional `within`
+   - introns-all-to-combined for junction annotation
+   - introns-other-tx equality hits
+2. Split/pre-index by query intron (`split(subjectHits(...), queryHits(...))`) and reuse in loop.
+3. Keep per-intron loop only for lightweight assembly of results.
+
+**Benefits:** Significant performance improvements, clearer separation of expensive vs per-row work.
+
+**Verification:**
+- Benchmark old vs new on a representative dataset (same inputs, compare runtime and output equality).
+
+---
+
+### R2.6 Make `tx_extraction()` Linear-Time and Tighten Input Parsing
+
+**File:** `R/1_select_gene_and_transcript.R` (lines 76–98; also 82, 175, 219, 263)
+
+**Problem:** Repeated `rbind()` inside loop is quadratic. Regex checks are broader than needed. There are still `region_type == c("intron")` patterns that should be scalar comparisons.
+
+**Refactor:**
+1. Replace iterative `rbind()` with:
+   - preallocated vectors then one `data.table()` call, or
+   - `lapply()` + `rbindlist()`.
+2. Replace `length(grep(...)) > 0` with `grepl(...)`.
+3. Use anchored transcript regex (`^NM_[0-9]+\\.[0-9]+$`) and explicit gene validation.
+4. Replace `region_type == c("intron")` with `region_type == "intron"` project-wide.
+
+**Benefits:** Better performance for larger gene lists, cleaner intent, fewer parsing edge cases.
+
+**Verification:**
+- Keep existing `test-1_select_gene_and_transcript.R` tests.
+- Add a performance-oriented test with a larger synthetic gene vector.
+
+---
+
+### R2.7 Harden Plot/Excel Output Against Numeric and Column-Order Edge Cases
+
+**File:** `R/5_generate_report.R` (lines 140–149, 189–206)
+
+**Problem:**
+1. `filtered_table$difference / filtered_table$controlavg` can produce `Inf/NaN` when `controlavg == 0`.
+2. `scale_y_continuous(... max(...))` can fail with non-finite values.
+3. `generate.excel()` styles use hard-coded numeric column indices, which are fragile when report columns change.
+
+**Refactor:**
+1. Create safe ratio column with finite handling (`ifelse(controlavg == 0, NA_real_, difference / controlavg)`).
+2. Compute plot limits from finite values only and provide fallback default.
+3. Replace hard-coded style columns with name-driven indices (`grep("^pct_|^count_|^difference$|^controlavg$", names(data))`).
+
+**Benefits:** More robust reports, easier schema evolution, fewer runtime plotting failures.
+
+**Verification:**
+- Add tests where `controlavg` includes zero and `NA`.
+- Add test that reorders columns before `generate.excel()` and confirms style-target logic still resolves correctly.
+
+---
+
+### R2.8 Simplify `cortar_batch()` File Discovery and Output Path Construction
+
+**File:** `R/0_run_cortar.R` (lines 245–246)
+
+**Problem:** `list.files()` is called twice with duplicated string-building logic and manual path concatenation. This is less readable and can drift if one side changes.
+
+**Refactor:**
+1. Compute `batch_files <- list.files(folder, pattern = pattern, full.names = TRUE)` once.
+2. Build output dirs with `file.path(output_dir, tools::file_path_sans_ext(basename(batch_files)))`.
+3. Optionally return the output paths invisibly for easier testing/monitoring.
+
+**Benefits:** Cleaner code, fewer path bugs, easier testability.
+
+**Verification:**
+- Add tests for:
+  - no matched files
+  - nested folder names
+  - non-default `pattern`.
+
+---
+
+## Suggested Implementation Order (Round 2)
+
+1. **PR A:** R2.3 + R2.4 (overlap indexing correctness in `extractCountReads`)
+2. **PR B:** R2.1 + R2.7 (schema hardening across compare/report outputs)
+3. **PR C:** R2.2 (remove interactive prompts from runtime)
+4. **PR D:** R2.8 + R2.6 (batch and extraction maintainability/performance)
+5. **PR E:** R2.5 (larger performance refactor in `annotateQuantifyEvents`)
