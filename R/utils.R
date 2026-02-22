@@ -9,6 +9,10 @@ DEFAULT_COVERAGE_NONE <- 0
 INTRON_JUNCTION_UPSTREAM <- 4
 INTRON_JUNCTION_DOWNSTREAM <- 3
 
+# Minimum overlap (bp) required for a read to be counted at an exon-intron
+# junction. This filters out reads that only marginally overlap the boundary.
+MIN_JUNCTION_OVERLAP <- 8
+
 #' Check if debug mode is enabled
 #'
 #' @param debug Debug parameter (can be a path string or FALSE)

@@ -183,14 +183,14 @@ read_bam_sample <- function(bamfile,
   overlaps_intron_starts <- GenomicRanges::countOverlaps(
     intron_starts.GRanges,
     alignment,
-    minoverlap = 8,
+    minoverlap = MIN_JUNCTION_OVERLAP,
     type = "any"
   )
 
   overlaps_intron_ends <- GenomicRanges::countOverlaps(
     intron_ends.GRanges,
     alignment,
-    minoverlap = 8,
+    minoverlap = MIN_JUNCTION_OVERLAP,
     type = "any"
   )
 

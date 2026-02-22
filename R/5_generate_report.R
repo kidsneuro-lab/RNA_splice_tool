@@ -70,9 +70,10 @@ generateReport <- function(comparisons, Sample_File, Export, mode, prefix, debug
     all_splicing_events_sample <- comparisons
     testgenes <- unique(all_splicing_events_sample$gene)
     proband <- "splicing_analysis"
+    sample_pct_cols <- grep("^pct_", names(all_splicing_events_sample), value = TRUE)
     for(gene in testgenes){
       normalSpliceMap(all_splicing_events_sample,
-                      familycols[1],
+                      sample_pct_cols[1],
                       proband,
                       gene,
                       export = Export,
