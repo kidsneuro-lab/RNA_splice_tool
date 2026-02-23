@@ -54,11 +54,8 @@ cortar <- function(file,
   }
 
   # mode
-  if (mode != "default") {
-    if (mode == "panel" | mode == "research") {
-    } else {
-      stop("'", mode, "' is not an available cortar mode ('default','panel','research')")
-    }
+  if (mode %nin% c("default", "panel", "research")) {
+    stop("'", mode, "' is not an available cortar mode ('default','panel','research')")
   }
 
   # assembly
@@ -120,7 +117,7 @@ cortar <- function(file,
   }
 
   # Initialise debug directory
-  if(debug == TRUE){
+  if (isTRUE(debug)) {
     debug <- paste0(output_dir,"debug")
     message(paste0("RUNNING IN DEBUG MODE! All output will be saved to: '", debug,"'"))
     message("")
@@ -142,7 +139,7 @@ cortar <- function(file,
 
   # Select genes and transcripts of interest
   # A genelist must be provided for panel or research mode
-  if (mode == "panel" | mode == "research") {
+  if (mode == "panel" || mode == "research") {
     genes_tx <- selectGenesTranscripts(
       genes = genelist,
       assembly = assembly,
@@ -163,10 +160,10 @@ cortar <- function(file,
 
   # Reads for the genes and transcripts of interest are extracted and counted
   reads <- extractCountReads(
-    genes.GRanges = genes_tx[[1]],
-    introns.GRanges = genes_tx[[2]][[1]],
-    intron_starts.GRanges = genes_tx[[4]][[1]],
-    intron_ends.GRanges = genes_tx[[4]][[2]],
+    genes.GRanges = genes_tx$genes,
+    introns.GRanges = genes_tx$introns$granges,
+    intron_starts.GRanges = genes_tx$junctions$starts,
+    intron_ends.GRanges = genes_tx$junctions$ends,
     bamfiles = file$bamfile,
     sjfiles = file$sjfile,
     irfiles = file$irfile,
@@ -183,9 +180,9 @@ cortar <- function(file,
   events <- annotateQuantifyEvents(
     ids = file$sampleID,
     combined_sj = reads,
-    introns.GRanges = genes_tx[[2]][[1]],
-    introns_other_tx.GRanges = genes_tx[[3]],
-    introns = genes_tx[[2]][[2]],
+    introns.GRanges = genes_tx$introns$granges,
+    introns_other_tx.GRanges = genes_tx$introns_other_tx,
+    introns = genes_tx$introns$metadata,
     assembly = assembly,
     debug = debug,
     ria = ria
@@ -243,11 +240,11 @@ cortar_batch <- function(folder,
                            output_dir = "~",
                            genelist = NULL,
                            prefix = "",
-                           debug = debug,
+                           debug = FALSE,
                            ria = TRUE){
   batches_in <- sapply(list.files(folder, pattern = pattern),function(x){paste0(folder,"/",x)})
   batches_out <- sapply(list.files(folder, pattern = pattern),function(x){paste0(output_dir,"/",strsplit(x,"\\.")[[1]][1])})
-  for(batch in seq(1,length(batches_in))){
+  for(batch in seq_along(batches_in)){
     if(!dir.exists(batches_out[batch])){
       message("'",batches_out[batch],"' created.")
       dir.create(batches_out[batch])
@@ -328,9 +325,6 @@ cortar_batch <- function(folder,
 #' @export
 subsetBamfiles <- function(genes, hg, overhang = 1000){
 
-  # Read in cortar samplefile
-  # file <- data.table::fread(file)
-
   # Select correct gene annotation for chosen assembly
   if (hg == 38) {
     Refseq_Genes <- refseq_introns_exons_hg38
@@ -344,7 +338,7 @@ subsetBamfiles <- function(genes, hg, overhang = 1000){
 
   gene_coordinates <- list()
 
-  for (gene_counter in seq(1, length(genes))) {
+  for (gene_counter in seq_along(genes)) {
     gene <- genes[gene_counter]
 
     if (grepl("^ENSG", gene)) {

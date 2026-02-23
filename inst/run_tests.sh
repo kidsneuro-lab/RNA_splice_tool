@@ -1,5 +1,5 @@
-#!/usr/bin/env Rscript
+#!/usr/bin/env bash
 
-library(devtools)
+set -euo pipefail
 
-devtools::test()
+Rscript -e "devtools::test()"

@@ -43,8 +43,8 @@ jobs:
 
       - name: Check docker cli via docker (default mode)
         run: |
-          docker run --rm -v $(pwd)/tests:/tests rna_splice_tool -f /tests/testthat/data/input/samples_default_dockertest.tsv -o /tmp -r TRUE
+          docker run --rm -v $(pwd)/tests:/tests -w /tests/testthat rna_splice_tool -f /tests/testthat/data/input/samples_default.tsv -o /tmp -r TRUE
 
       - name: Check docker cli via docker (research mode)
         run: |
-          docker run --rm -v $(pwd)/tests:/tests rna_splice_tool -f tests/testthat/data/input/samples_research_dockertest.tsv -m research -g EMD,DMD -o /tmp
+          docker run --rm -v $(pwd)/tests:/tests -w /tests/testthat rna_splice_tool -f /tests/testthat/data/input/samples_research.tsv -m research -g EMD,DMD -o /tmp

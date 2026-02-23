@@ -101,7 +101,7 @@ select_controls <- function(db, metadata, age_of_biopsy_range, sex_matched){
                              genes != metadata$gene &
                              genes != "unsolved"]
 
-  if(sex_matched == TRUE){
+  if (isTRUE(sex_matched)) {
     db_subset_incl_excl <- db_subset_incl_excl[sex == metadata$sex]
   }
 
@@ -124,7 +124,7 @@ generate_samplefile <- function(db_subset, metadata, paths, use.db.paths = TRUE)
 
   control_subset <- db_subset[,sampletype := ""]
 
-  if(use.db.paths == TRUE){
+  if (isTRUE(use.db.paths)) {
     control_subset <- db_subset[,.(sampleID,
                                    familyID,
                                    sampletype,

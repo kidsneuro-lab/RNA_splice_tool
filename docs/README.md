@@ -22,7 +22,7 @@ Main documentation covering:
 
 ### 🧬 [Panel Mode](panel-mode.md) 
 **Multi-gene panel analysis for targeted gene sets**
-- Multiple genes analyzed simultaneously
+- Multiple genes analysed simultaneously
 - External genelist specification
 - Panel-wide reporting
 - Gene panel sequencing applications
@@ -47,6 +47,32 @@ Main documentation covering:
 | Method development | **Research** | Equal treatment of all samples |
 | Reference database | **Research** | Population-level statistics |
 
+## Core Workflow Snapshots
+
+### Default Mode
+
+```mermaid
+flowchart LR
+    A[Input: samplefile with test sample and target gene] --> B[Logic: one-gene test vs unrelated, non-matching-gene controls]
+    B --> C[Output: per-sample clinical-style splicing report]
+```
+
+### Panel Mode
+
+```mermaid
+flowchart LR
+    A[Input: samplefile plus panel genelist] --> B[Logic: per-test sample, analyse all panel genes vs unrelated controls]
+    B --> C[Output: per-sample multi-gene panel splicing report]
+```
+
+### Research Mode
+
+```mermaid
+flowchart LR
+    A[Input: cohort samplefile plus research genelist] --> B[Logic: all-sample population analysis with no test/control filtering]
+    B --> C[Output: cohort-wide summary statistics and splicing landscape]
+```
+
 ## Getting Started
 
 1. **Start with [Cortar Overview](cortar-overview.md)** for general function usage
@@ -56,14 +82,6 @@ Main documentation covering:
    - Population study → [Research Mode](research-mode.md)
 3. **Follow the workflow diagrams** in each mode's documentation
 4. **Review the examples** for code implementation
-
-## Workflow Diagrams
-
-Each mode documentation includes detailed Mermaid workflow diagrams showing:
-- Data flow through the pipeline
-- Mode-specific filtering steps
-- Statistical analysis approaches
-- Output generation processes
 
 ## Support
 

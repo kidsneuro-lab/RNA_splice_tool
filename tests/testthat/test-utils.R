@@ -45,3 +45,22 @@ test_that("%nin% handles edge cases", {
   expect_false(NA %nin% c(NA, "a", "b"))
   expect_true("test" %nin% NULL)
 })
+
+# Test get_genome_assembly() --------------------------------------------------
+
+test_that("get_genome_assembly returns a BSgenome object for valid combinations", {
+  hg38_ucsc <- get_genome_assembly("hg38", "UCSC")
+  hg19_ucsc <- get_genome_assembly("hg19", "UCSC")
+  hg19_1000g <- get_genome_assembly("hg19", "1000genomes")
+
+  expect_s4_class(hg38_ucsc, "BSgenome")
+  expect_s4_class(hg19_ucsc, "BSgenome")
+  expect_s4_class(hg19_1000g, "BSgenome")
+})
+
+test_that("get_genome_assembly rejects unsupported combinations", {
+  expect_error(
+    get_genome_assembly("hg38", "1000genomes"),
+    "Unsupported assembly/annotation combination"
+  )
+})
