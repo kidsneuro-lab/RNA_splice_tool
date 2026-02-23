@@ -25,7 +25,7 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
   events_by_intron <- list()
 
   # Extract and Annotate All Events at Canonical Junctions
-  for(query_intron in seq(1, nrow(introns))) {
+  for(query_intron in seq_len(nrow(introns))) {
     intron_name <- paste0(introns$gene_name[query_intron], " intron ", introns$region_no[query_intron])
 
     # For all samples extract all the reads which overlap the query intron jxns
@@ -39,7 +39,7 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
     )
 
     # Include reads in absentia
-    if(ria == TRUE){
+    if (isTRUE(ria)) {
       qryhits_within <- GenomicRanges::findOverlaps(introns.GRanges[query_intron], combined_sj_sorted, type = "within")
       query_intron.GRanges <- c(
         query_intron.GRanges,
@@ -127,62 +127,56 @@ annotateQuantifyEvents <- function(ids, combined_sj, introns.GRanges, introns_ot
 #' @keywords internal
 #Takes a data-table with events and returns them in a human readable format
 eventAnnotation <- function(query_intron.dt){
-    event <- 1
-    events <- c()
-    for(event in seq(1,nrow(query_intron.dt))){
-        #Extract intron start and end ranges and strand
-        exon_range_start <- query_intron.dt[event,intron_jxn_start]
-        exon_range_end <- query_intron.dt[event,intron_jxn_end]
-        exon_ranges <- c(exon_range_start, exon_range_end)
-        strand <- as.character(query_intron.dt$strand[event])
-
-        #normal splicing
-        if (!is.na(exon_range_start) & !is.na(exon_range_end)) {
-            if(max(exon_ranges)-min(exon_ranges) == 0){
-                if(query_intron.dt$SJ_IR[event] == "SJ"){
-                    events[event] <- (paste0("canonical exon ",min(exon_ranges),"-",
-                                             max(exon_ranges)+1," splicing"))
-
-                    #intron retention
-                }else{
-                    events[event] <- (paste0("intron ",min(exon_ranges)," retention"))
-                }
-
-                #exon skipping
-            }else{
-                events[event] <- paste0("exon ", paste0(seq(min(exon_ranges)+1,max(exon_ranges)),collapse="-")," skipping")
-            }
-
-            #cryptic splice-site use
-        }else if (!is.na(exon_range_start)){
-            if (strand == "-"){
-                events[event] <- (paste("cryptic donor", " ~ ", "exon ",
-                                        exon_range_start+1, sep="", collapse=""))
-            }
-            if (strand == "+"){
-                events[event] <- (paste("exon ",exon_range_start, " ~ ",
-                                        "cryptic acceptor", sep="", collapse=""))
-            }
-            if (strand == "*"){
-                events[event] <- "cryptic (strand unknown)"
-            }
-        }else if (!is.na(exon_range_end)){
-            if (strand == "-"){
-                events[event] <- (paste("exon ", exon_range_end, " ~ ",
-                                        "cryptic acceptor", sep="", collapse=""))
-            }
-            if (strand == "+"){
-                events[event] <- (paste("cryptic donor", " ~ ", "exon ",
-                                        exon_range_end+1, sep="", collapse=""))
-            }
-            if (strand == "*"){
-              events[event] <- "cryptic (strand unknown)"
-            }
-            #catching errors
-        }else{
-            events[event] <- ("unannotated junctions")
-        }
+    n_events <- nrow(query_intron.dt)
+    if (n_events == 0) {
+      return(character(0))
     }
+
+    start_jxn <- query_intron.dt$intron_jxn_start
+    end_jxn <- query_intron.dt$intron_jxn_end
+    strand <- as.character(query_intron.dt$strand)
+    sj_ir <- query_intron.dt$SJ_IR
+
+    min_range <- pmin(start_jxn, end_jxn)
+    max_range <- pmax(start_jxn, end_jxn)
+    range_diff <- max_range - min_range
+
+    skip_labels <- vapply(seq_len(n_events), function(i) {
+      if (!is.na(min_range[i]) && !is.na(max_range[i]) && range_diff[i] > 0) {
+        paste0(
+          "exon ",
+          paste0(seq.int(min_range[i] + 1, max_range[i]), collapse = "-"),
+          " skipping"
+        )
+      } else {
+        ""
+      }
+    }, character(1))
+
+    events <- data.table::fcase(
+      !is.na(start_jxn) & !is.na(end_jxn) & range_diff == 0 & sj_ir == "SJ",
+      paste0("canonical exon ", min_range, "-", max_range + 1, " splicing"),
+      !is.na(start_jxn) & !is.na(end_jxn) & range_diff == 0 & sj_ir != "SJ",
+      paste0("intron ", min_range, " retention"),
+      !is.na(start_jxn) & !is.na(end_jxn) & range_diff > 0,
+      skip_labels,
+      !is.na(start_jxn) & is.na(end_jxn) & strand == "-",
+      paste0("cryptic donor ~ exon ", start_jxn + 1),
+      !is.na(start_jxn) & is.na(end_jxn) & strand == "+",
+      paste0("exon ", start_jxn, " ~ cryptic acceptor"),
+      !is.na(start_jxn) & is.na(end_jxn) & strand == "*",
+      "cryptic (strand unknown)",
+      is.na(start_jxn) & !is.na(end_jxn) & strand == "-",
+      paste0("exon ", end_jxn, " ~ cryptic acceptor"),
+      is.na(start_jxn) & !is.na(end_jxn) & strand == "+",
+      paste0("cryptic donor ~ exon ", end_jxn + 1),
+      is.na(start_jxn) & !is.na(end_jxn) & strand == "*",
+      "cryptic (strand unknown)",
+      is.na(start_jxn) & is.na(end_jxn),
+      "unannotated junctions",
+      default = NA_character_
+    )
+
     return(events)
 }
 
@@ -203,47 +197,44 @@ framed <- function(query_intron.dt, assembly){
         rfsq <- refseq_introns_exons_hg38
     } else if (assembly == "hg19") {
         rfsq <- refseq_introns_exons_hg19
+    } else {
+        stop("Unsupported assembly: ", assembly)
     }
 
-    frame <- c()
-    for(event in seq(1,nrow(query_intron.dt))){
-        if(query_intron.dt$SJ_IR[event] == "SJ"){
-            #is the start/end annotated
-            #both annotated
-            if(query_intron.dt$start[event] %in% rfsq$region_start & query_intron.dt$end[event] %in% rfsq$region_end){
-                pairstart <- unique(rfsq$region_start[which(rfsq$region_end == query_intron.dt$end[event])])
-                pairend <- unique(rfsq$region_end[which(rfsq$region_start == query_intron.dt$start[event])])
-                if(query_intron.dt$end[event] %in% pairend){
-                    frame[event] <- TRUE
-                }else{
-                    dist2authentic <- abs(query_intron.dt$end[event]-pairend)
-                    frame[event] <- dist2authentic%%3 == 0
-                }
-            }
-            #start annotated
-            else if(query_intron.dt$start[event] %in% rfsq$region_start){
-                pairend <- unique(rfsq$region_end[which(rfsq$region_start == query_intron.dt$start[event])])
-                dist2authentic <- abs(query_intron.dt$end[event]-pairend)
-                frame[event] <- dist2authentic%%3 == 0
-            }
-            #end annotated
-            else if(query_intron.dt$end[event] %in% rfsq$region_end){
-                pairstart <- unique(rfsq$region_start[which(rfsq$region_end == query_intron.dt$end[event])])
-                dist2authentic <- abs(query_intron.dt$start[event]-pairstart)
-                frame[event] <- dist2authentic%%3 == 0
-            }
-            #unannotated junctions
-            else{
-                frame[event] <- NA
-            }
+    n_events <- nrow(query_intron.dt)
+    if (n_events == 0) {
+      return(character(0))
+    }
 
-        }else if(query_intron.dt$SJ_IR[event] == "IR"){
-            frame[event] <- ""
+    frame <- rep("", n_events)
+    is_sj <- query_intron.dt$SJ_IR == "SJ"
+    starts <- query_intron.dt$start
+    ends <- query_intron.dt$end
+
+    start_annotated <- starts %in% rfsq$region_start
+    end_annotated <- ends %in% rfsq$region_end
+
+    for(event in which(is_sj)){
+      if(start_annotated[event] && end_annotated[event]){
+        pairend <- unique(rfsq$region_end[rfsq$region_start == starts[event]])
+        if(ends[event] %in% pairend){
+          frame[event] <- TRUE
         }else{
-            frame[event] <- ""
+          dist2authentic <- abs(ends[event] - pairend)
+          frame[event] <- any(dist2authentic %% 3 == 0)
         }
+      } else if(start_annotated[event]){
+        pairend <- unique(rfsq$region_end[rfsq$region_start == starts[event]])
+        dist2authentic <- abs(ends[event] - pairend)
+        frame[event] <- any(dist2authentic %% 3 == 0)
+      } else if(end_annotated[event]){
+        pairstart <- unique(rfsq$region_start[rfsq$region_end == ends[event]])
+        dist2authentic <- abs(starts[event] - pairstart)
+        frame[event] <- any(dist2authentic %% 3 == 0)
+      } else{
+        frame[event] <- NA
+      }
     }
+
     return(frame)
 }
-
-

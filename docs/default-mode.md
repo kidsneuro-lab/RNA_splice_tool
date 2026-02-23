@@ -2,11 +2,11 @@
 
 ## Overview
 
-Default mode is designed for **single gene analysis** where each test sample (proband) is analyzed for one specific gene and compared against family-unrelated control samples. This is the most commonly used mode for clinical diagnostics and case studies.
+Default mode is designed for **single gene analysis** where each test sample (proband) is analysed for one specific gene and compared against family-unrelated control samples. This is the most commonly used mode for clinical diagnostics and case studies.
 
 ## Key Characteristics
 
-- **One gene per test sample**: Each proband is analyzed for a specific gene of interest
+- **One gene per test sample**: Each proband is analysed for a specific gene of interest
 - **Family-aware filtering**: Controls are excluded if they belong to the same family as the test sample
 - **Gene-specific filtering**: Controls are excluded if they have the same gene under investigation
 - **Coverage filtering**: Controls with insufficient coverage are automatically excluded
@@ -38,6 +38,19 @@ control_2   family4                 CFTR       NM_000492        /path/to/control
 ```
 
 ## Workflow
+
+### Core Workflow (Input → Logic → Output)
+
+```mermaid
+flowchart LR
+    A[Input: samplefile with test/control labels and per-sample genes] --> B[Logic: for each test sample, keep unrelated controls, exclude same-gene controls, apply coverage filters, quantify splicing]
+    B --> C[Output: per-sample statistics and ranked splice events]
+    C --> D[Files: Excel plus full TSV, optional PDF splice plots]
+
+    style A fill:#e1f5fe
+    style B fill:#fff3e0
+    style D fill:#c8e6c9
+```
 
 ### Detailed Default Mode Pipeline
 
@@ -121,7 +134,7 @@ After filtering, remaining samples become the control cohort for statistical com
 
 ### Quality Control
 - **Read count thresholds**: Filters low-coverage events
-- **Annotation confidence**: Prioritizes well-annotated splice sites
+- **Annotation confidence**: Prioritises well-annotated splice sites
 - **Frame conservation**: Identifies frame-preserving vs frame-shifting events
 
 ## Output Files
@@ -131,16 +144,16 @@ For each test sample, default mode generates:
 
 #### Excel Report (`{sampleID}_{gene}_combined_dt_.xlsx`)
 - **Filtered results**: Events exceeding statistical thresholds
-- **Color coding**: Visual highlighting of significant events
+- **Colour coding**: Visual highlighting of significant events
 - **Multiple sheets**: Different significance levels and event types
 
 #### Full TSV File (`{sampleID}_{gene}_combined_full.tsv`)
-- **Complete results**: All analyzed splicing events
+- **Complete results**: All analysed splicing events
 - **Detailed metrics**: Statistical comparisons and annotations
 - **Research format**: Tab-separated for downstream analysis
 
 #### Optional PDF Plots (`{sampleID}_{gene}_normalSpliceMap.pdf`)
-- **Splice visualization**: Graphical representation of splicing patterns
+- **Splice visualisation**: Graphical representation of splicing patterns
 - **Control comparisons**: Test sample overlaid on control distribution
 
 ### Column Descriptions

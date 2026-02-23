@@ -2,11 +2,11 @@
 
 ## Overview
 
-Panel mode is designed for **multi-gene panel analysis** where multiple genes are analyzed simultaneously using an external gene list. This mode is ideal for targeted gene panel sequencing, clinical exome analysis, or research studies focusing on specific gene sets.
+Panel mode is designed for **multi-gene panel analysis** where multiple genes are analysed simultaneously using an external gene list. This mode is ideal for targeted gene panel sequencing, clinical exome analysis, or research studies focusing on specific gene sets.
 
 ## Key Characteristics
 
-- **Multiple genes**: Analyzes all genes specified in the external genelist parameter
+- **Multiple genes**: Analyses all genes specified in the external genelist parameter
 - **External gene specification**: Uses `genelist` parameter instead of samplefile genes column
 - **Family-aware filtering**: Controls are excluded if they belong to the same family as test samples
 - **No gene-specific filtering**: Controls can have any gene background (unlike default mode)
@@ -18,7 +18,7 @@ Panel mode is designed for **multi-gene panel analysis** where multiple genes ar
 - Clinical exome analysis with targeted gene lists
 - Research studies investigating specific biological pathways
 - Multi-gene diagnostic testing
-- When you want to analyze the same gene set across multiple patients
+- When you want to analyse the same gene set across multiple patients
 
 ## Sample File Requirements
 
@@ -26,7 +26,7 @@ In panel mode, the samplefile structure differs from default mode:
 - **genes**: Can be any gene symbol or left empty (not used for analysis)
 - **sampletype**: Mark test samples with "test", leave controls empty  
 - **familyID**: Unique identifier to group related samples
-- **genelist parameter**: External list defines genes to analyze
+- **genelist parameter**: External list defines genes to analyse
 
 ### Example Samplefile
 ```
@@ -53,6 +53,19 @@ cortar(
 ```
 
 ## Workflow
+
+### Core Workflow (Input → Logic → Output)
+
+```mermaid
+flowchart LR
+    A[Input: samplefile with test/control labels plus external genelist] --> B[Logic: for each test sample, analyse all panel genes, exclude same-family controls only, quantify and compare splicing across panel]
+    B --> C[Output: per-sample panel statistics and outlier events across genes]
+    C --> D[Files: panel Excel and TSV reports, optional per-gene PDF plots]
+
+    style A fill:#e1f5fe
+    style B fill:#fff3e0
+    style D fill:#c8e6c9
+```
 
 ### Detailed Panel Mode Pipeline
 
@@ -119,7 +132,7 @@ Unlike default mode, panel mode uses simplified control filtering:
 3. **Coverage filtering**: Applied across all panel genes collectively
 
 ### Rationale for Simplified Filtering
-- **Broader control base**: Maximizes control sample size
+- **Broader control base**: Maximises control sample size
 - **Panel-wide analysis**: Assumes pathogenic variants are rare across the panel
 - **Statistical power**: Larger control groups improve statistical confidence
 
@@ -128,7 +141,7 @@ Unlike default mode, panel mode uses simplified control filtering:
 ### Panel-Wide Event Quantification
 1. **Multi-gene read extraction**: Processes all panel genes simultaneously
 2. **Comprehensive event detection**: Identifies splicing events across entire panel
-3. **Cross-gene normalization**: Consistent analysis parameters across genes
+3. **Cross-gene normalisation**: Consistent analysis parameters across genes
 
 ### Comparison Metrics
 - **Panel-wide controls**: Same control cohort used for all genes
@@ -158,8 +171,8 @@ For each test sample, panel mode generates:
 - **Cross-gene comparisons**: Panel-wide statistical summaries
 
 #### Per-Gene PDF Plots (`{sampleID}_{gene}_normalSpliceMap.pdf`)
-- **Individual gene plots**: Separate visualization for each panel gene
-- **Consistent formatting**: Standardized plots across genes
+- **Individual gene plots**: Separate visualisation for each panel gene
+- **Consistent formatting**: Standardised plots across genes
 - **Control overlays**: Test sample patterns vs. control distributions
 
 ### Enhanced Output Columns
@@ -192,7 +205,7 @@ Additional columns specific to panel mode:
 ## Best Practices
 
 ### Panel Design
-- Include well-characterized genes with known disease associations
+- Include well-characterised genes with known disease associations
 - Balance panel size (typically 50-500 genes for optimal analysis)
 - Consider gene size and exon structure for coverage planning
 
@@ -209,11 +222,11 @@ Additional columns specific to panel mode:
 ## Troubleshooting
 
 ### Common Issues
-1. **Uneven gene coverage**: Optimize capture design or sequencing depth
+1. **Uneven gene coverage**: Optimise capture design or sequencing depth
 2. **Large panel complexity**: Consider sub-panel analysis or filtering
 3. **Control population biases**: Ensure diverse, well-matched controls
 
-### Performance Optimization
+### Performance Optimisation
 - **Memory management**: Large panels may require increased memory allocation
 - **Processing time**: Consider parallel processing for large gene sets
 - **Storage requirements**: Plan for increased output file sizes
