@@ -36,3 +36,122 @@ test_that("cortar_batch does not depend on caller debug symbol", {
     evalq(cortar_batch(folder = batch_dir, pattern = "\\.tsv$"), envir = clean_env)
   )
 })
+
+test_that("subsetBamfiles prints expected coordinates for single gene (using gene name)", {
+  out <- capture_output(
+    subsetBamfiles(
+      c("EMD"),
+      "38",
+      overhang = 0,
+      use_ncbi_gene_id = FALSE
+    )
+  )
+
+  expected <- paste(c(
+    "chrX\t154379294\t154381523"
+  ), collapse = "\n")
+
+  expect_equal(out, expected)
+})
+
+test_that("subsetBamfiles prints expected coordinates for multiple genes (using gene name)", {
+  out <- capture_output(
+    subsetBamfiles(
+      c("EMD", "DMD"),
+      "38",
+      overhang = 0,
+      use_ncbi_gene_id = FALSE
+    )
+  )
+
+  expected <- paste(c(
+    "chrX\t154379294\t154381523",
+    "chrX\t31119221\t33339388"
+  ), collapse = "\n")
+
+  expect_equal(out, expected)
+})
+
+test_that("subsetBamfiles prints expected coordinates for multiple genes with overhang=10 (using gene name)", {
+  out <- capture_output(
+    subsetBamfiles(
+      c("EMD", "DMD"),
+      "38",
+      overhang = 10,
+      use_ncbi_gene_id = FALSE
+    )
+  )
+
+  expected <- paste(c(
+    "chrX\t154379284\t154381533",
+    "chrX\t31119211\t33339398"
+  ), collapse = "\n")
+
+  expect_equal(out, expected)
+})
+
+test_that("subsetBamfiles prints expected coordinates for single gene (using NCBI gene id)", {
+  out <- capture_output(
+    subsetBamfiles(
+      c(2010),
+      "38",
+      overhang = 0,
+      use_ncbi_gene_id = TRUE
+    )
+  )
+
+  expected <- paste(c(
+    "chrX\t154379294\t154381523"
+  ), collapse = "\n")
+
+  expect_equal(out, expected)
+})
+
+test_that("subsetBamfiles prints expected coordinates for multiple genes (using NCBI gene id)", {
+  out <- capture_output(
+    subsetBamfiles(
+      c(2010, 1756),
+      "38",
+      overhang = 0,
+      use_ncbi_gene_id = TRUE
+    )
+  )
+
+  expected <- paste(c(
+    "chrX\t154379294\t154381523",
+    "chrX\t31119221\t33339388"
+  ), collapse = "\n")
+
+  expect_equal(out, expected)
+})
+
+test_that("subsetBamfiles prints expected coordinates for multiple genes with overhang=10 (using NCBI gene id)", {
+  out <- capture_output(
+    subsetBamfiles(
+      c(2010, 1756),
+      "38",
+      overhang = 10,
+      use_ncbi_gene_id = TRUE
+    )
+  )
+
+  expected <- paste(c(
+    "chrX\t154379284\t154381533",
+    "chrX\t31119211\t33339398"
+  ), collapse = "\n")
+
+  expect_equal(out, expected)
+})
+
+test_that("subsetBamfiles errors when a gene is not found", {
+  expect_error(
+    subsetBamfiles(
+      c("EMD", "DMD", "AAAA"),
+      "38",
+      overhang = 0
+    ),
+    regexp = "Number of NCBI genes does not match genes of interest\\. NCBI genes not found for: AAAA",
+    fixed = FALSE
+  )
+})
+

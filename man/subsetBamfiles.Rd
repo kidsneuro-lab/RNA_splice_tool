@@ -2,28 +2,65 @@
 % Please edit documentation in R/0_run_cortar.R
 \name{subsetBamfiles}
 \alias{subsetBamfiles}
-\title{Extract gene coordinates for RNA-seq subsetting}
+\title{Create BED Coordinates for Genes from RefSeq Exon Annotations}
 \usage{
-subsetBamfiles(genes, hg, overhang = 1000)
+subsetBamfiles(
+  genes,
+  hg = c("19", "38"),
+  overhang = 1000,
+  use_ncbi_gene_id = FALSE
+)
 }
 \arguments{
-\item{genes}{A character vector with the entrez_gene_symbols,
-RefSeq transcript ids, or Ensembl gene or transcript ids for the genes for
-analysis.}
+\item{genes}{Character vector of gene identifiers to look up in RefSeq exon annotations.
+By default these are RefSeq \code{gene_name} values; if \code{use_ncbi_gene_id = TRUE}, these
+are matched to RefSeq \code{gene_id} values instead.}
 
-\item{hg}{Either 19 or 38}
+\item{hg}{Genome assembly to use. Must be \code{"19"} (hg19) or \code{"38"} (hg38).}
 
-\item{overhang}{Number of nucleotides flanking the gene to be included
-(default: 1000nt)}
+\item{overhang}{Non-negative numeric scalar. Number of base pairs to extend each gene
+span upstream (subtract from start) and downstream (add to end). Default is \code{1000}.}
+
+\item{use_ncbi_gene_id}{Logical; if \code{TRUE}, match \code{genes} against RefSeq \code{gene_id}
+(NCBI Gene ID field in the annotation). If \code{FALSE} (default), match against \code{gene_name}.}
 }
 \value{
-A character vector.
+Invisibly returns \code{NULL}. The function prints one BED interval per gene to the
+console via \code{cat()}, with fields separated by tabs:
+\code{chr<chrom>\t<start0>\t<end>}
 }
 \description{
-Returns the gene coordinates for a given entrez_gene_symbol or
-RefSeq/Ensembl transcript to be used for RNA-seq subsetting
+\code{subsetBamfiles()} looks up each requested gene in the bundled RefSeq exon annotation
+(\code{refseq_introns_exons_hg19} or \code{refseq_introns_exons_hg38}), computes the gene span
+(min exon start to max exon end), applies an optional flanking \code{overhang}, and prints
+BED-style coordinates to the console.
+}
+\details{
+The output is intended for tools that accept BED intervals (tab-delimited:
+\code{chrom}, \code{start}, \code{end}). Note that BED uses a \strong{0-based, half-open} start coordinate,
+so this function subtracts 1 from the computed start after applying \code{overhang}.
+
+The gene span is obtained for the specified gene(s) with specified overhang subtracted
+and added at each gene's start and end coordinates respectively. The function can either
+determine the gene spans using NCBI gene id or HGNC names
+
+Chromosomes are formatted with a \code{chr} prefix. \code{MT} is converted to \code{chrM} (i.e.,
+\code{chrMT} becomes \code{chrM}) for compatibility with common BAM/BED conventions.
+
+The function stops if:
+\itemize{
+\item none of the requested genes are found in the selected RefSeq annotation, or
+\item only a subset are found (it reports which identifiers were missing).
+}
 }
 \examples{
-== COMING SOON==
+\dontrun{
+# Using gene symbols (gene_name) on hg38 with no overhang
+subsetBamfiles(genes = c("EMD", "DMD"), hg = "38", overhang = 0)
+
+# Using NCBI gene IDs (gene_id) on hg38
+subsetBamfiles(genes = c("1234", "5678"), hg = "38", overhang = 500,
+               use_ncbi_gene_id = TRUE)
+}
 
 }

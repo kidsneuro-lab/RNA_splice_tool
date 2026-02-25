@@ -6,39 +6,53 @@ library(testthat)
 load(test_path("refseq_introns_exons_hg38_mock.rda"))
 refseq_mock <- refseq_introns_exons_hg38_mock
 
-# Mock gene data
-mock_genes <- c("EMD", "COL2A1")
-
 # 1. Basic functionality
 test_that("tx_extraction correctly parses gene names", {
-  result <- tx_extraction(mock_genes, refseq_mock)
+  result <- tx_extraction(c("EMD", "COL2A1"), refseq_mock)
   expected_output <- data.table::data.table(
     gene_name = c("EMD", "COL2A1"),
-    tx = c("NM_000117.3", "NM_001844.5")
+    tx_version_id = c("NM_000117.3", "NM_001844.5")
   )
   expect_equal(result, expected_output)
 })
 
-# 2. Mismatched or invalid input
+test_that("tx_extraction correctly parses gene names", {
+  result <- tx_extraction(c(2010, 1280), refseq_mock)
+  expected_output <- data.table::data.table(
+    gene_name = c("EMD", "COL2A1"),
+    tx_version_id = c("NM_000117.3", "NM_001844.5")
+  )
+  expect_equal(result, expected_output)
+})
+
+test_that("tx_extraction correctly parses gene names", {
+  result <- tx_extraction(c(2010, 'NM_033150.3'), refseq_mock)
+  expected_output <- data.table::data.table(
+    gene_name = c("EMD", "COL2A1"),
+    tx_version_id = c("NM_000117.3", "NM_033150.3")
+  )
+  expect_equal(result, expected_output)
+})
+
+# Mix of gene names, transcripts, and blank
+test_that("tx_extraction can handle mixed input", {
+  result <- tx_extraction(c(2010, 'NM_033150.3',""), refseq_mock)
+  expected_output <- data.table::data.table(
+    gene_name = c("EMD", "COL2A1"),
+    tx_version_id = c("NM_000117.3", "NM_033150.3")
+  )
+  expect_equal(result, expected_output)
+})
+
+# Mismatched or invalid input
 test_that("tx_extraction throws an error for invalid gene names", {
   expect_error(tx_extraction(c("NON_EXISTENT"), refseq_mock),
-               "Gene name `NON_EXISTENT` is invalid")
+               "Gene or Transcript identifier `NON_EXISTENT` is invalid")
 })
 
 test_that("tx_extraction throws an error for invalid transcripts", {
   expect_error(tx_extraction(c("NM_001844.0"), refseq_mock),
-               "Transcript identifier `NM_001844.0` is invalid")
-})
-
-# 3. Mix of gene names, transcripts, and blank
-test_that("tx_extraction can handle mixed input", {
-  mixed_input <- c("EMD", "NM_033150.3", "")
-  result <- tx_extraction(mixed_input, refseq_mock)
-  expected_output <- data.table::data.table(
-    gene_name = c("EMD", "COL2A1"),
-    tx = c("NM_000117.3", "NM_033150.3")
-  )
-  expect_equal(result, expected_output)
+               "Gene or Transcript identifier `NM_001844.0` is invalid")
 })
 
 # 4. Edge cases
@@ -47,15 +61,15 @@ test_that("tx_extraction returns empty data.table for empty input", {
   expect_equal(nrow(result), 0)
 })
 
-test_that("tx_extraction returns empty data.table for blank input", {
-  result <- tx_extraction("", refseq_mock)
+test_that("tx_extraction returns empty data.table for empty input", {
+  result <- tx_extraction(c(""), refseq_mock)
   expect_equal(nrow(result), 0)
 })
 
 # 5. Assembly Data (assuming refseq_introns_exons_hg38 has a similar structure to the mock data)
 # Note: Modify this test to suit the actual data structure of refseq_introns_exons_hg38
 test_that("tx_extraction handles different assemblies", {
-  result <- tx_extraction(mock_genes, refseq_introns_exons_hg38)
+  result <- tx_extraction(c("EMD", "COL2A1"), refseq_introns_exons_hg38)
   # Modify the expectation based on the expected behavior for this scenario
   expect_true(nrow(result) > 0)
 })
@@ -63,39 +77,203 @@ test_that("tx_extraction handles different assemblies", {
 
 # GENE_TO_GRANGE --------------------------------------------------------------
 
-
-
-# Subset BAM file --------------------------------------------------------------
-
-test_that("Obtaining genomic ranges for genes (based on gene name)", {
-  result <- capture.output(subsetBamfiles(genes = c('EMD','DMD'), hg = 38, overhang = 0))
-  expect_equal(result[[1]], "chrX\t154379566\t154380881")
-  expect_equal(result[[2]], "chrX\t31121930\t33211281")
-})
-
-test_that("Obtaining genomic ranges for genes (based on gene name)", {
-  result <- capture.output(subsetBamfiles(genes = c('MPP5'), hg = 38, overhang = 0))
-  expect_equal(result[[1]], "chr14\t67240712\t67336061")
-})
-
-test_that("Obtaining genomic ranges for genes (with 1 bp overhang)", {
-  result <- capture.output(subsetBamfiles(genes = c('MPP5'), hg = 38, overhang = 1))
-  expect_equal(result[[1]], "chr14\t67240711\t67336062")
-})
-
-test_that("Obtaining genomic ranges for genes (based on Ensembl gene ID)", {
-  result <- capture.output(subsetBamfiles(genes = c('ENSG00000231514'), hg = 38, overhang = 0))
-  expect_equal(result[[1]], "chrY\t26626519\t26627159")
-})
-
-test_that("Obtaining genomic ranges for genes (based on Refseq transcript ID)", {
-  result <- capture.output(subsetBamfiles(genes = c('NM_001002761.1'), hg = 38, overhang = 0))
-  expect_equal(result[[1]], "chrY\t25031222\t25052073")
-})
-
-test_that("Throwing error if gene is not found", {
-  expect_error(
-    capture.output(subsetBamfiles(genes = c('NOT_FOUND'), hg = 38, overhang = 0)),
-    '\\[NOT_FOUND\\] not found in Ensembl or Refseq. Please check input values.'
+test_that("Obtain granges for EMD and COL2A1 (UCSC annotation)", {
+  gene_tx <- data.table::data.table(
+    gene_name = c("EMD", "COL2A1"),
+    tx_version_id = c("NM_000117.3", "NM_001844.5")
   )
+
+  result = gene_to_GRange(
+    gene_tx = gene_tx,
+    annotation = 'UCSC',
+    refseq_introns_exons = refseq_mock,
+  )
+
+  expected_result <- GenomicRanges::GRanges(
+    seqnames = c('chrX','chr12'),
+    IRanges::IRanges(
+      start = c(154380882, 48004237),
+      end = c(154381523, 48004476)
+    ),
+    strand = c('+','-')
+  )
+
+  expect_equal(result, expected_result)
+})
+
+test_that("Obtain granges for EMD and COL2A1 (Default annotation)", {
+  gene_tx <- data.table::data.table(
+    gene_name = c("EMD", "COL2A1"),
+    tx_version_id = c("NM_000117.3", "NM_001844.5")
+  )
+
+  result = gene_to_GRange(
+    gene_tx = gene_tx,
+    annotation = '1000genomes',
+    refseq_introns_exons = refseq_mock,
+  )
+
+  expected_result <- GenomicRanges::GRanges(
+    seqnames = c('X','12'),
+    IRanges::IRanges(
+      start = c(154380882, 48004237),
+      end = c(154381523, 48004476)
+    ),
+    strand = c('+','-')
+  )
+
+  expect_equal(result, expected_result)
+})
+
+test_that("Throw error if attempting to obtain GRanges for empty data.table", {
+  gene_tx <- data.table::data.table(
+    gene_name = c(),
+    tx_version_id = c()
+  )
+
+  expect_error(
+    gene_to_GRange(
+      gene_tx = gene_tx,
+      annotation = 'UCSC',
+      refseq_introns_exons = refseq_mock,
+    ),
+    "Cannot obtain GRange for empty data.table"
+  )
+})
+
+# INTRONS_TO_GRANGE --------------------------------------------------------------
+
+test_that("Obtain intron granges for EMD (UCSC annotation)", {
+  gene_tx <- data.table::data.table(
+    gene_name = c("EMD"),
+    tx_version_id = c("NM_000117.3")
+  )
+
+  result = introns_to_GRange(
+    gene_tx = gene_tx,
+    annotation = 'UCSC',
+    refseq_intron_exons = refseq_mock,
+  )
+
+  expected_result <- GenomicRanges::GRanges(
+    seqnames = c('chrX'),
+    IRanges::IRanges(
+      start = c(154380368),
+      end = c(154380752)
+    ),
+    strand = c('+'),
+    intron_no = 4L,
+    gene = "EMD"
+  )
+
+  expect_equal(result$granges, expected_result)
+})
+
+# OTHER_INTRONS_TO_GRANGE --------------------------------------------------------------
+
+test_that("Obtain other intron granges for EMD (UCSC annotation)", {
+  gene_tx <- data.table::data.table(
+    gene_name = c("COL2A1"),
+    tx_version_id = c("NM_001844.5")
+  )
+
+  result = introns_other_tx_to_GRange(
+    gene_tx = gene_tx,
+    annotation = 'UCSC',
+    refseq_intron_exons = refseq_mock,
+  )
+
+  expected_result <- GenomicRanges::GRanges(
+    seqnames = c('chr12'),
+    IRanges::IRanges(
+      start = c(47980969),
+      end = c(47981342)
+    ),
+    strand = c('-'),
+    tx_id = 'NM_033150.3',
+    intron_no = 36L,
+    gene = "COL2A1"
+  )
+
+  expect_equal(result, expected_result)
+})
+
+# introns_jx_to_GRange --------------------------------------------------------------
+
+test_that("Obtain other intron granges for EMD (UCSC annotation)", {
+  gene_tx <- data.table::data.table(
+    gene_name = c("COL2A1"),
+    tx_version_id = c("NM_001844.5")
+  )
+
+  # Constants for junction boundaries
+  INTRON_JUNCTION_UPSTREAM <- 4
+  INTRON_JUNCTION_DOWNSTREAM <- 3
+
+  result = introns_jx_to_GRange(
+    gene_tx = gene_tx,
+    annotation = 'UCSC',
+    refseq_introns_exons = refseq_mock,
+  )
+
+  expected_starts_result <- GenomicRanges::GRanges(
+    seqnames = c('chr12'),
+    IRanges::IRanges(
+      start = c(47976071-INTRON_JUNCTION_UPSTREAM),
+      end = c(47976071+INTRON_JUNCTION_DOWNSTREAM)
+    ),
+    strand = c('-')
+  )
+
+  expected_ends_result <- GenomicRanges::GRanges(
+    seqnames = c('chr12'),
+    IRanges::IRanges(
+      start = c(47976513-INTRON_JUNCTION_DOWNSTREAM),
+      end = c(47976513+INTRON_JUNCTION_UPSTREAM)
+    ),
+    strand = c('-')
+  )
+
+  expect_equal(result$starts, expected_starts_result)
+  expect_equal(result$ends, expected_ends_result)
+})
+
+# selectGenesTranscripts --------------------------------------------------------------
+
+test_that("selectGenesTranscripts", {
+  genes <- c('EMD')
+  assembly <- 'hg38'
+  annotation = 'UCSC'
+
+  results <- selectGenesTranscripts(
+    c('EMD'),
+    'hg38',
+    'UCSC'
+  )
+
+  expected_genes_result <- GenomicRanges::GRanges(
+    seqnames = c('chrX'),
+    IRanges::IRanges(
+      start = c(154379295),
+      end = c(154381523)
+    ),
+    strand = c('+')
+  )
+
+  expected_introns_result <- GenomicRanges::GRanges(
+    seqnames = "chrX",
+    ranges = IRanges::IRanges(
+      start = c(154379567, 154379795, 154380020, 154380368, 154380803),
+      end   = c(154379689, 154379941, 154380233, 154380752, 154380881)
+    ),
+    strand = "+",
+    intron_no = 1:5,
+    gene = "EMD"
+  )
+
+  expect_equal(results$genes, expected_genes_result)
+  expect_equal(results$introns$granges, expected_introns_result)
+  expect_equal(length(results$introns_other_tx), 0)
+  expect_equal(length(results$junctions$starts), 5)
+  expect_equal(length(results$junctions$ends), 5)
 })

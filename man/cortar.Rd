@@ -16,7 +16,8 @@ cortar(
   output_dir = "~",
   genelist = NULL,
   prefix = "",
-  ria = F
+  debug = FALSE,
+  ria = TRUE
 )
 }
 \arguments{

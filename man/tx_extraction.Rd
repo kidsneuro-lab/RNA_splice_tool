@@ -2,31 +2,43 @@
 % Please edit documentation in R/1_select_gene_and_transcript.R
 \name{tx_extraction}
 \alias{tx_extraction}
-\title{Extract Genes & Transcripts}
+\title{Resolve input identifiers to RefSeq transcripts}
 \usage{
-tx_extraction(genes, refseq_assembly = refseq_introns_exons_hg38)
+tx_extraction(genes, refseq_introns_exons, debug = "")
 }
 \arguments{
-\item{genes}{A character vector of gene names and/or RefSeq transcript IDs}
+\item{genes}{Character vector of gene symbols, Entrez Gene IDs, RefSeq
+transcript IDs with version, or RefSeq transcript IDs without version.}
 
-\item{refseq_assembly}{A data.table of RefSeq coding genes. Either:
-\code{refseq_introns_exons_hg38} (default) or \code{refseq_introns_exons_hg19}}
+\item{refseq_introns_exons}{\code{data.table} of RefSeq exon/intron annotations
+for a genome assembly (for example \code{refseq_introns_exons_hg38}).}
+
+\item{debug}{Optional output directory for writing intermediate TSV files.
+Use \code{""} (default) to disable debug output.}
 }
 \value{
-A data.table with two columns \code{gene_name} and \code{tx}, with a
-row for each gene/transcript provided, containing:
+A \code{data.table} with one row per input identifier and columns:
 \itemize{
-\item the query gene name and the canonical RefSeq transcript - if a gene name
-was provided
-\item the gene name and the query transcript - if a RefSeq transcript was
-provided
+\item \code{gene_name}: resolved HGNC-style gene symbol.
+\item \code{tx_version_id}: resolved RefSeq transcript ID with version.
 }
 }
 \description{
-\code{tx_extraction} extracts genes and/or transcripts from a list and fetches
-the corresponding gene and/or transcript as required.
+\code{tx_extraction()} maps each input identifier to a RefSeq transcript record.
+Gene-level identifiers return canonical transcripts (\code{canonical == 1L}),
+while transcript identifiers return the matching transcript entry.
+}
+\details{
+Identifier matching uses indexed/keyed \code{data.table} joins for efficient
+lookup across large annotation tables.
 }
 \examples{
-#### == COMING SOON == ####
+\dontrun{
+# Example 1: gene symbols
+tx_extraction(c("EMD", "COL2A1"), refseq_introns_exons_hg38)
+
+# Example 2: Entrez Gene ID + transcript ID (with version)
+tx_extraction(c(2010, "NM_033150.3"), refseq_introns_exons_hg38)
+}
 
 }
