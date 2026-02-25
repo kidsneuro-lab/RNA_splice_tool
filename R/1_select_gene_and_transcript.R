@@ -121,23 +121,14 @@ tx_extraction <- function(genes,
 
     # Skip empty lines in input samplesheet where Gene is ""
     # This can occur in default mode where only a single sample has a gene associated with it
-    if (is.character(gene_or_transcript) & gene_or_transcript == "") {
+    if ((is.character(gene_or_transcript) & gene_or_transcript == "") | is.na(gene_or_transcript)) {
       next
     }
 
     futile.logger::flog.debug(sprintf("Gene or Transcript: %s", as.character(gene_or_transcript)))
 
-    # Guard against NULL, NA, or empty strings
-    if (is.null(gene_or_transcript) || length(gene_or_transcript) == 0) {
-      stop(sprintf("Element %d is NULL or empty.", counter))
-    }
-
     if (length(gene_or_transcript) > 1) {
       stop(sprintf("Element %d has length > 1", counter))
-    }
-
-    if (is.na(gene_or_transcript)) {
-      stop(sprintf("Element %d is NA.", counter))
     }
 
     # Coerce to character if numeric (e.g. Entrez Gene IDs passed as integers)
@@ -192,8 +183,6 @@ tx_extraction <- function(genes,
                                                               .(gene_name, tx_version_id)
         ]
 
-    } else {
-      stop(sprintf("Gene or Transcript identifier `%s` is invalid", gene_or_transcript))
     }
 
     if (is.na(genes_info[[counter]]$gene_name) | is.na(genes_info[[counter]]$tx)) {
