@@ -11,13 +11,14 @@ cortar_batch(
   assembly = "hg38",
   annotation = "UCSC",
   input_type = "sj",
-  paired = T,
+  paired = TRUE,
   stranded = 2,
-  subset = F,
+  subset = FALSE,
   output_dir = "~",
   genelist = NULL,
   prefix = "",
-  ria = T
+  debug = FALSE,
+  ria = TRUE
 )
 }
 \arguments{

@@ -17,7 +17,8 @@ extractCountReads(
   annotation,
   paired,
   stranded,
-  input
+  input,
+  debug
 )
 }
 \arguments{

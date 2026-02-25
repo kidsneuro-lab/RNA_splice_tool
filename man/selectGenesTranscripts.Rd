@@ -2,34 +2,51 @@
 % Please edit documentation in R/1_select_gene_and_transcript.R
 \name{selectGenesTranscripts}
 \alias{selectGenesTranscripts}
-\title{Select Genes & Transcripts}
+\title{Select genes and transcripts and build genomic ranges}
 \usage{
-selectGenesTranscripts(genes, assembly, annotation)
+selectGenesTranscripts(genes, assembly, annotation, debug = "")
 }
 \arguments{
-\item{genes}{A character vector of gene names and/or RefSeq transcript IDs
-with version numbers (e.g. NM_004006.2)}
+\item{genes}{Character vector of identifiers. Supported formats are gene
+symbols, Entrez Gene IDs, RefSeq transcript IDs with version
+(for example \code{"NM_000546.6"}), and RefSeq transcript IDs without version
+(for example \code{"NM_000546"}).}
 
-\item{assembly}{Assembly used for alignment: either \code{"hg38"} or \code{"hg19"}}
+\item{assembly}{Genome assembly used for alignment. Supported values are
+\code{"hg38"} and \code{"hg19"}.}
 
-\item{annotation}{Annotation used for alignment: either \code{"UCSC"}or
-\code{"1000genomes"}}
+\item{annotation}{Sequence naming style used by the aligned BAM files.
+Supported values are \code{"UCSC"} and \code{"1000genomes"}.}
+
+\item{debug}{Optional output directory for writing intermediate TSV files.
+Use \code{""} (default) to disable debug output.}
 }
 \value{
-A list of GRanges for:
+A named list with:
 \itemize{
-\item genes of interest
-\item introns in genes of interest
-\item introns in genes of interest (other transcripts)
-\item exon-intron junctions of genes of interest
+\item \code{genes}: \code{GRanges} covering selected canonical transcripts.
+\item \code{introns}: list with \code{granges} (\code{GRanges}) and \code{metadata}
+(\code{data.table}) for introns in selected transcripts.
+\item \code{introns_other_tx}: \code{GRanges} of introns from other transcripts of the
+same genes.
+\item \code{junctions}: combined \code{GRanges} of intron start/end junction windows.
 }
 }
 \description{
-\code{selectGenesTranscripts} extracts genes and/or transcripts from the cortar
-samplefile and returns gene and intron GRange objects required for further
-analysis.
+\code{selectGenesTranscripts()} resolves the requested genes/transcripts and
+returns the genomic ranges used by downstream cortar steps.
 }
 \examples{
-#### == COMING SOON == ####
+\dontrun{
+# Example 1: single-gene selection (mirrors test fixture usage)
+res <- selectGenesTranscripts(c("EMD"), "hg38", "UCSC")
+res$genes
+length(res$introns$granges)
+
+# Example 2: alternate sequence style for a transcript-rich gene
+res2 <- selectGenesTranscripts(c("COL2A1"), "hg38", "1000genomes")
+length(res2$introns_other_tx)
+length(res2$junctions)
+}
 
 }

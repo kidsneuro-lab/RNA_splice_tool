@@ -265,136 +265,124 @@ cortar_batch <- function(folder,
   }
 }
 
-#' Subset BAM Files Based on Gene Annotations
+#' Create BED Coordinates for Genes from RefSeq Exon Annotations
 #'
-#' The `subsetBamfiles` function retrieves and formats genomic ranges for specified genes
-#' based on the chosen genome assembly (hg19 or hg38). It supports gene names, Ensembl gene IDs,
-#' and transcript IDs (RefSeq). The function adjusts the genomic coordinates by a specified
-#' overhang and outputs the formatted ranges as strings.
+#' `subsetBamfiles()` looks up each requested gene in the bundled RefSeq exon annotation
+#' (`refseq_introns_exons_hg19` or `refseq_introns_exons_hg38`), computes the gene span
+#' (min exon start to max exon end), applies an optional flanking `overhang`, and prints
+#' BED-style coordinates to the console.
 #'
-#' @param genes A character vector of gene identifiers. This can include:
-#'   \itemize{
-#'     \item Gene names (e.g., `"EMD"`, `"DMD"`)
-#'     \item Ensembl gene IDs (e.g., `"ENSG00000231514"`)
-#'     \item Transcript IDs (e.g., `"NM_XXXXXX"`)
-#'   }
-#' @param hg An integer specifying the genome assembly version. Supported values are `19` (hg19) and `38` (hg38).
-#' @param overhang A numeric value indicating the number of base pairs to subtract from the start position
-#'   and add to the end position of each genomic range. Default is `1000`.
+#' The output is intended for tools that accept BED intervals (tab-delimited:
+#' `chrom`, `start`, `end`). Note that BED uses a **0-based, half-open** start coordinate,
+#' so this function subtracts 1 from the computed start after applying `overhang`.
 #'
-#' @return The function outputs formatted genomic range strings to the console using `cat()`.
-#'   Each range is formatted as:
-#'   \code{  - "''chr<chrom>:<start>-<end>''"}
+#' @param genes Character vector of gene identifiers to look up in RefSeq exon annotations.
+#'   By default these are RefSeq `gene_name` values; if `use_ncbi_gene_id = TRUE`, these
+#'   are matched to RefSeq `gene_id` values instead.
+#' @param hg Genome assembly to use. Must be `"19"` (hg19) or `"38"` (hg38).
+#' @param overhang Non-negative numeric scalar. Number of base pairs to extend each gene
+#'   span upstream (subtract from start) and downstream (add to end). Default is `1000`.
+#' @param use_ncbi_gene_id Logical; if `TRUE`, match `genes` against RefSeq `gene_id`
+#'   (NCBI Gene ID field in the annotation). If `FALSE` (default), match against `gene_name`.
+#'
+#' @return Invisibly returns `NULL`. The function prints one BED interval per gene to the
+#'   console via `cat()`, with fields separated by tabs:
+#'   \code{chr<chrom>\t<start0>\t<end>}
+#'
+#' @details
+#' The gene span is obtained for the specified gene(s) with specified overhang subtracted
+#' and added at each gene's start and end coordinates respectively. The function can either
+#' determine the gene spans using NCBI gene id or HGNC names
+#'
+#' Chromosomes are formatted with a `chr` prefix. `MT` is converted to `chrM` (i.e.,
+#' `chrMT` becomes `chrM`) for compatibility with common BAM/BED conventions.
+#'
+#' The function stops if:
+#' \itemize{
+#'   \item none of the requested genes are found in the selected RefSeq annotation, or
+#'   \item only a subset are found (it reports which identifiers were missing).
+#' }
 #'
 #' @examples
 #' \dontrun{
-#' # Example 1: Obtaining genomic ranges for multiple genes based on gene names
-#' subsetBamfiles(genes = c('EMD', 'DMD'), hg = 38, overhang = 0)
-#' # Output:
-#' #   - "''chrX:154379567-154380881''"
-#' #   - "''chrX:31121931-33211281''"
+#' # Using gene symbols (gene_name) on hg38 with no overhang
+#' subsetBamfiles(genes = c("EMD", "DMD"), hg = "38", overhang = 0)
 #'
-#' # Example 2: Obtaining genomic ranges for a single gene based on gene name
-#' subsetBamfiles(genes = c('MPP5'), hg = 38, overhang = 0)
-#' # Output:
-#' #   - "''chr14:67240713-67336061''"
-#'
-#' # Example 3: Obtaining genomic ranges based on Ensembl gene ID
-#' subsetBamfiles(genes = c('ENSG00000231514'), hg = 38, overhang = 0)
-#' # Output:
-#' #   - "''chrY:26626520-26627159''"
-#'
-#' # Example 4: Throwing an error if gene is not found
-#' subsetBamfiles(genes = c('NOT_FOUND'), hg = 38, overhang = 0)
-#' # Error:
-#' # [NOT_FOUND] not found in Ensembl or Refseq. Please check input values.
+#' # Using NCBI gene IDs (gene_id) on hg38
+#' subsetBamfiles(genes = c("1234", "5678"), hg = "38", overhang = 500,
+#'                use_ncbi_gene_id = TRUE)
 #' }
-#'
-#' @details
-#' The function processes each gene identifier to determine its corresponding genomic coordinates.
-#' It handles different types of identifiers by checking against RefSeq and Ensembl gene annotations.
-#' If a gene cannot be located in either annotation set, the function will terminate and throw an error.
-#'
-#' The `overhang` parameter allows users to extend or reduce the genomic range boundaries,
-#' which can be useful for including additional upstream or downstream regions.
-#'
-#' @seealso
-#' \code{\link[testthat]{test_that}}, \code{\link[data.table]{data.table}}
 #'
 #' @import data.table
 #' @export
-subsetBamfiles <- function(genes, hg, overhang = 1000){
+subsetBamfiles <- function(genes, hg = c('19','38'), overhang = 1000, use_ncbi_gene_id = FALSE){
+  stopifnot(length(genes) > 0L)
 
-  # Select correct gene annotation for chosen assembly
-  if (hg == 38) {
-    Refseq_Genes <- refseq_introns_exons_hg38
-    Ensembl_Genes <- ensembl_allgenes_chr1_Y_hg38
-  } else if (hg == 19) {
-    Refseq_Genes <- refseq_introns_exons_hg19
-    Ensembl_Genes <- ensembl_allgenes_chr1_Y_hg19
+  hg <- match.arg(hg, c("19", "38"))
+
+  if (!is.numeric(overhang) || length(overhang) != 1L || is.na(overhang) || overhang < 0) {
+    stop("`overhang` must be a single non-negative numeric value.")
+  }
+  overhang <- as.integer(overhang)
+
+  if (any(duplicated(genes))) {
+    stop("Duplicate input genes. Please check.")
   }
 
-  # First check if the gene can be located in
+  # Select correct gene annotation for chosen assembly. Avoid modifying the global table
+  Refseq_Genes <- data.table::copy(
+    if (hg == "38") refseq_introns_exons_hg38 else refseq_introns_exons_hg19
+  )
 
-  gene_coordinates <- list()
+  Refseq_Genes[, requested_identifier := if (isTRUE(use_ncbi_gene_id)) gene_id else gene_name]
 
-  for (gene_counter in seq_along(genes)) {
-    gene <- genes[gene_counter]
+  refseq_genes <- Refseq_Genes[region_type == 'exon',
+                              .(start = min(region_start),
+                                end = max(region_end)), by = .(gene_id,
+                                                               gene_name,
+                                                               requested_identifier,
+                                                               chrom)]
 
-    if (grepl("^ENSG", gene)) {
-      result <- Ensembl_Genes[`Gene stable ID` == gene,
-                              .(chrom = `Chromosome/scaffold name`,
-                                start = `Gene start (bp)`,
-                                end = `Gene end (bp)`)]
-      gene_coordinates[[gene]] <- as.list(result)
+  # Create a data.table based on input genes
+  requested_identifiers <- data.table::data.table(
+    requested_identifier = genes,
+    input_order_index = seq_along(genes)
+  )
 
-    } else if (grepl("^NM_", gene) || grepl("^ENST", gene)) {
-      tx <- gsub(pattern = "\\.\\d+$", "", gene)
-      result <- Refseq_Genes[tx_id == tx & region_type == 'intron' & (region_no==1 | last_region==1)][order(ifelse(strand == '+', last_region, -last_region))]
-      result_list <- as.list(result[,.(start = min(region_start),
-                                       end = max(region_end)), by = .(chrom)])
-      gene_coordinates[[gene]] <- result_list
+  # Obtain the refseq genes entry for each input gene
+  matched_gene_spans <- refseq_genes[requested_identifiers, on = .(requested_identifier)]
 
-    } else if (gene %in% Refseq_Genes$gene_name) {
-      result <- Refseq_Genes[gene_name == gene & canonical == 1 & region_type == 'intron' & (region_no==1 | last_region==1)][order(ifelse(strand == '+', last_region, -last_region))]
-      result_list <- as.list(result[,.(start = min(region_start),
-                                       end = max(region_end)), by = .(chrom)])
-
-      gene_coordinates[[gene]] <- result_list
-
-    } else if (gene %in% Ensembl_Genes$`Gene name`) {
-      result <- Ensembl_Genes[`Gene name` == gene,
-                              .(chrom = `Chromosome/scaffold name`,
-                                start = `Gene start (bp)`,
-                                end = `Gene end (bp)`)]
-      gene_coordinates[[gene]] <- as.list(result)
-
-    } else (
-      stop(paste0("[", gene, "] not found in Ensembl or Refseq. Please check input values."))
-    )
+  if (nrow(matched_gene_spans) == 0) {
+    stop("No NCBI genes found corresponding to genes of interest")
   }
 
-  updated_gene_coordinates <- lapply(gene_coordinates, function(sublist) {
-    # Append 'chr' to the chrom value. Ensure MT chromosome formatting is correct
-    sublist$chrom <- ifelse(paste0("chr", sublist$chrom) == 'chrMT', 'chrM', paste0("chr", sublist$chrom))
+  # No. of genes where NCBI gene entry not found
+  genes_with_no_NCBI_entry <- matched_gene_spans[is.na(gene_id)]
 
-    # Subtract overhang from the start position
-    sublist$start <- sublist$start - overhang
+  if (nrow(genes_with_no_NCBI_entry) > 0) {
+    stop(sprintf("Number of NCBI genes does not match genes of interest. NCBI genes not found for: %s", paste(genes_with_no_NCBI_entry[,requested_identifier], collapse = ',')))
+  }
 
-    # Add overhang to the end position
-    sublist$end <- sublist$end + overhang
+  # Ensure output is in the same order as input
+  data.table::setorder(matched_gene_spans, input_order_index)
 
-    # Return the modified sublist
-    return(sublist)
-  })
+  matched_gene_spans[,chrom := ifelse(startsWith(chrom, "chr"), chrom, paste0("chr", chrom))]
+  matched_gene_spans[, chrom := ifelse(chrom == "chrMT", "chrM", chrom)]
 
-  formatted_gene_coords <- sapply(updated_gene_coordinates, function(sublist) {
-    # Create the formatted string with double single quotes
-    formatted_string <- sprintf("%s\t%d\t%d", sublist$chrom, sublist$start - 1, sublist$end) # Subtract 1 from start for BED coordinates
-    return(formatted_string)
-  })
+  # Apply overhang, clamping start to 0 to avoid negative coordinates
+  matched_gene_spans[, start := pmax(0L, start - 1 - as.integer(overhang))]
+  matched_gene_spans[, end   := end + as.integer(overhang)]
+
+  # BED is 0-based start, so subtract 1 from start
+  formatted_gene_coords <- sprintf(
+    "%s\t%d\t%d",
+    matched_gene_spans$chrom,
+    matched_gene_spans$start,
+    matched_gene_spans$end
+  )
 
   cat(paste(formatted_gene_coords, collapse = "\n"))
+  invisible(formatted_gene_coords)
 }
 
 
