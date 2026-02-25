@@ -185,6 +185,10 @@ tx_extraction <- function(genes,
 
     }
 
+    if (!isGeneID & !isTranscriptWithVersion & !isTranscriptNoVersion & !isGeneName) {
+      stop(sprintf("Gene or Transcript identifier `%s` is invalid", gene_or_transcript))
+    }
+
     if (is.na(genes_info[[counter]]$gene_name) | is.na(genes_info[[counter]]$tx)) {
       stop(sprintf("Gene or Transcript identifier `%s` is invalid", gene_or_transcript))
     }
