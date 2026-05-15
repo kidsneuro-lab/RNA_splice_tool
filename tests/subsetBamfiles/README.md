@@ -12,22 +12,22 @@ samtools sort -@ 8 -o ENCFF433OOU.sorted.bam ENCFF433OOU.bam
 samtools index ENCFF433OOU.sorted.bam
 ```
 
-2. Download Chromosome 2
+2. Download Chromosome 21
 ```bash
 wget https://hgdownload.soe.ucsc.edu/goldenPath/hg38/chromosomes/chr2.fa.gz
-gunzip chr2.fa.gz
-mv chr2.fa chr2.fasta
-bgzip chr2.fasta
-samtools faidx chr2.fasta
+gunzip chr21.fa.gz
+mv chr21.fa chr21.fasta
+bgzip chr21.fasta
+samtools faidx chr21.fasta
 ```
 
-3. Subset original BAM file to chr21:37,900,354-41,084,017 and call it SAMPLE1.bam
+3. Subset original BAM file to chr21:37900354-41084017 and call it SAMPLE1.bam
 
 ```bash
-samtools view -o SAMPLE1.bam -T chr21.fasta.gz ENCFF433OOU.sorted.bam chr21:37,900,354-41,084,017
+samtools view -o SAMPLE1.bam -T chr21.fasta.gz ENCFF433OOU.sorted.bam chr21:37900354-41084017
 ```
 
-4. Subset original BAM file to chr21:37,900,354-41,084,017 and call it SAMPLE1.cram
+4. Subset original BAM file to chr21:37900354-41084017 and call it SAMPLE2.cram
 
 > [!NOTE]
 >
@@ -37,7 +37,7 @@ samtools view -o SAMPLE1.bam -T chr21.fasta.gz ENCFF433OOU.sorted.bam chr21:37,9
 ```bash
 samtools view -h \
   ENCFF433OOU.sorted.bam \
-  chr21:37,900,354-41,084,017 |
+  chr21:37900354-41084017 |
 awk 'BEGIN{OFS="\t"} /^@SQ/ { if ($0 ~ /SN:chr21(\t|$)/) print; next } /^@/ { print; next } { print }' |
 samtools view -b -o SAMPLE2.chr21.onlyheader.bam
 

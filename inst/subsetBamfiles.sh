@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 usage() {
   echo "Usage: $0 --genes <gene1,gene2,...> --assembly <37|38> --alignmentfiles <path/to/alignmentfiles.txt> --ref-fasta <path/to/reference.fa> --output <path/to/output_directory> [--temp-dir <path/to/temp_directory>]"
