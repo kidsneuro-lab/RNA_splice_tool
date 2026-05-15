@@ -202,4 +202,3 @@ echo "All subsetted BAM files have been copied to '$OUTPUT_DIR'."
 rm -rf "$TEMP_DIR"
 
 echo "Subsetting process completed successfully."
-
