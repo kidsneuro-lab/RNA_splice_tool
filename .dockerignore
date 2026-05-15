@@ -49,3 +49,6 @@ po/*~
 rsconnect/
 
 build
+
+# Large test files
+**/ENCFF433OOU.*

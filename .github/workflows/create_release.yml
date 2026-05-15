@@ -18,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Create Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Build and cache
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: false
@@ -49,6 +49,10 @@ jobs:
         run: |
           docker run --rm -v $(pwd)/tests:/tests -w /tests/testthat rna_splice_tool -f /tests/testthat/data/input/samples_research.tsv -m research -g EMD,DMD -o /tmp
 
+      - name: Check subsetBamfiles
+        run: |
+          docker run --rm -v $(pwd):/working -w /working --entrypoint /working/tests/subsetBamfiles/test.sh rna_splice_tool
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -57,7 +61,7 @@ jobs:
 
       - name: Create version
         id: create_version
-        uses: anothrNick/github-tag-action@1.73.0
+        uses: anothrNick/github-tag-action@1.75.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: patch
@@ -73,7 +77,7 @@ jobs:
           TAG_LATEST: latest
           TAG_SEMVER: ${{ steps.create_version.outputs.tag }}
           TAG_SHA: ${{ github.sha }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true

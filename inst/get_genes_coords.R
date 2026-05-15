@@ -9,7 +9,7 @@ suppressPackageStartupMessages(library(futile.logger))
 option_list <- list(
   make_option(c("-g", "--genes"), type = "character", default = NULL,
               help = "Comma-separated list of genes (e.g., EMD,DMD)", metavar = "genes"),
-  make_option(c("-H", "--hg"), type = "integer", default = NULL,
+  make_option(c("-H", "--hg"), type = "character", default = NULL,
               help = "Genome version (e.g., 38)", metavar = "hg"),
   make_option(c("-o", "--overhang"), type = "integer", default = 1000,
               help = "Overhang value [default %default]", metavar = "overhang")
