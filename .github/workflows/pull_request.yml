@@ -48,3 +48,7 @@ jobs:
       - name: Check docker cli via docker (research mode)
         run: |
           docker run --rm -v $(pwd)/tests:/tests -w /tests/testthat rna_splice_tool -f /tests/testthat/data/input/samples_research.tsv -m research -g EMD,DMD -o /tmp
+
+      - name: Check subsetBamfiles
+        run: |
+          docker run --rm -v $(pwd):/working -w /working --entrypoint /working/tests/subsetBamfiles/test.sh rna_splice_tool

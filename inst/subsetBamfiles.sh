@@ -2,7 +2,7 @@
 set -e
 
 usage() {
-  echo "Usage: $0 --genes <gene1,gene2,...> --assembly <37|38> --cramfiles <path/to/cramfiles.txt> --ref-fasta <path/to/reference.fa> --output <path/to/output_directory> [--temp-dir <path/to/temp_directory>]"
+  echo "Usage: $0 --genes <gene1,gene2,...> --assembly <37|38> --alignmentfiles <path/to/alignmentfiles.txt> --ref-fasta <path/to/reference.fa> --output <path/to/output_directory> [--temp-dir <path/to/temp_directory>]"
   exit 1
 }
 
@@ -10,7 +10,7 @@ BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 GENES=""
 ASSEMBLY=""
-CRAMFILES=""
+ALIGNMENTFILES=""
 REF_FASTA=""
 OUTPUT_DIR=""
 TEMP_DIR=""
@@ -19,7 +19,7 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     -g|--genes)        GENES="$2"; shift 2;;
     -a|--assembly)     ASSEMBLY="$2"; shift 2;;
-    -c|--cramfiles)    CRAMFILES="$2"; shift 2;;
+    -c|--alignmentfiles) ALIGNMENTFILES="$2"; shift 2;;
     -r|--ref-fasta)    REF_FASTA="$2"; shift 2;;
     -o|--output)       OUTPUT_DIR="$2"; shift 2;;
     -t|--temp-dir)     TEMP_DIR="$2"; shift 2;;
@@ -33,19 +33,19 @@ done
 # (Optional) basic required-args checks
 [ -z "$GENES" ] && echo "Missing --genes" && usage
 [ -z "$ASSEMBLY" ] && echo "Missing --assembly" && usage
-[ -z "$CRAMFILES" ] && echo "Missing --cramfiles" && usage
+[ -z "$ALIGNMENTFILES" ] && echo "Missing --alignmentfiles" && usage
 [ -z "$REF_FASTA" ] && echo "Missing --ref-fasta" && usage
 [ -z "$OUTPUT_DIR" ] && echo "Missing --output" && usage
 
 echo "GENES.     : $GENES"
 echo "ASSEMBLY   : $ASSEMBLY"
-echo "CRAMFILES  : $CRAMFILES"
+echo "ALIGNMENTFILES  : $ALIGNMENTFILES"
 echo "REF_FASTA  : $REF_FASTA"
 echo "OUTPUT_DIR : $OUTPUT_DIR"
 
 # Check for mandatory arguments
-if [[ -z "$GENES" || -z "$ASSEMBLY" || -z "$CRAMFILES" || -z "$REF_FASTA" || -z "$OUTPUT_DIR" ]]; then
-    echo "Error: All arguments --genes, --assembly, --cramfiles, --ref-fasta, and --output are required."
+if [[ -z "$GENES" || -z "$ASSEMBLY" || -z "$ALIGNMENTFILES" || -z "$REF_FASTA" || -z "$OUTPUT_DIR" ]]; then
+    echo "Error: All arguments --genes, --assembly, --alignmentfiles, --ref-fasta, and --output are required."
     usage
 fi
 
@@ -55,9 +55,9 @@ if [[ "$ASSEMBLY" != "37" && "$ASSEMBLY" != "38" ]]; then
     exit 1
 fi
 
-# Validate cramfiles.txt
-if [[ ! -f "$CRAMFILES" ]]; then
-    echo "Error: CRAM files list '$CRAMFILES' does not exist or is not a file."
+# Validate alignmentfiles.txt
+if [[ ! -f "$ALIGNMENTFILES" ]]; then
+    echo "Error: Alignment files list '$ALIGNMENTFILES' does not exist or is not a file."
     exit 1
 fi
 
@@ -110,19 +110,29 @@ echo "--------------------"
 OIFS="$IFS"
 IFS=$'\n'
 
-# Loop through each CRAM file listed in cramfiles.txt
-echo "Starting subsetting of CRAM files..."
-for CRAM in $(cat "$CRAMFILES"); do
-    echo "Subsetting $CRAM"
+# Loop through each alignment file listed in alignmentfiles.txt
+echo "Starting subsetting of alignment files..."
+for ALIGNMENT in $(cat "$ALIGNMENTFILES"); do
+    echo "Subsetting $ALIGNMENT"
 
-    # Check if CRAM file exists
-    if [[ ! -f "$CRAM" ]]; then
-        echo "Error: CRAM file '$CRAM' does not exist. Exiting."
+    # Check if alignment file exists
+    if [[ ! -f "$ALIGNMENT" ]]; then
+        echo "Error: Alignment file '$ALIGNMENT' does not exist. Exiting."
         IFS="$OIFS"
         exit 1
     fi
 
-    PREFIX=$(basename "$CRAM" .cram)
+    # Handle both .bam and .cram extensions
+    if [[ "$ALIGNMENT" == *.bam ]]; then
+        PREFIX=$(basename "$ALIGNMENT" .bam)
+    elif [[ "$ALIGNMENT" == *.cram ]]; then
+        PREFIX=$(basename "$ALIGNMENT" .cram)
+    else
+        echo "Error: Alignment file '$ALIGNMENT' must have a .bam or .cram extension. Skipping."
+        IFS="$OIFS"
+        exit 1
+    fi
+
     echo "Processing prefix: $PREFIX"
 
     if [[ -f "$OUTPUT_DIR/${PREFIX}_subset.bam" ]]; then
@@ -140,11 +150,11 @@ for CRAM in $(cat "$CRAMFILES"); do
             --region-file "$TEMP_DIR/regions.bed" \
             -o "$TMP_BAM" \
             -T "$REF_FASTA" \
-            "$CRAM"
+            "$ALIGNMENT"
 
         # Check if samtools view was successful
         if [[ $? -ne 0 ]]; then
-            echo "Error: samtools view failed for '$CRAM'."
+            echo "Error: samtools view failed for '$ALIGNMENT'."
             IFS="$OIFS"
             exit 1
         fi
@@ -175,7 +185,7 @@ for CRAM in $(cat "$CRAMFILES"); do
         # Remove temporary BAM file
         rm "$TMP_BAM"
 
-        echo "Successfully subsetted '$CRAM' to '$FINAL_BAM'."
+        echo "Successfully subsetted '$ALIGNMENT' to '$FINAL_BAM'."
     fi
 done
 
