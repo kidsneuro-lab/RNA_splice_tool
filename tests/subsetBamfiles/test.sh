@@ -42,3 +42,36 @@ else
   echo "❌ Test failed: Subset bam files do not have the same number of lines as the original bam file."
   exit 1
 fi
+
+echo ""
+echo "🏃 Running duplicate genes test"
+echo "🧬 Genes (with duplicates): ETS2,ETS2"
+
+rm -rf $PWD/tests/subsetBamfiles/output_dup
+rm -rf $PWD/tests/subsetBamfiles/temp_dup
+mkdir -p $PWD/tests/subsetBamfiles/output_dup
+mkdir -p $PWD/tests/subsetBamfiles/temp_dup
+
+./inst/subsetBamfiles.sh \
+  --alignmentfiles $PWD/tests/subsetBamfiles/data/samples.tsv \
+  --genes "ETS2,ETS2" \
+  --assembly "38" \
+  --ref-fasta $PWD/tests/subsetBamfiles/data/chr21.fasta.gz \
+  --output $PWD/tests/subsetBamfiles/output_dup \
+  --temp-dir $PWD/tests/subsetBamfiles/temp_dup
+
+DUP_SAMPLE1_SUBSET_LINE_COUNT=$(samtools view $PWD/tests/subsetBamfiles/output_dup/SAMPLE1_subset.bam | wc -l)
+DUP_SAMPLE2_SUBSET_LINE_COUNT=$(samtools view $PWD/tests/subsetBamfiles/output_dup/SAMPLE2_subset.bam | wc -l)
+
+echo "Subset line count for SAMPLE1.bam (duplicate genes input): $DUP_SAMPLE1_SUBSET_LINE_COUNT"
+echo "Subset line count for SAMPLE2.bam (duplicate genes input): $DUP_SAMPLE2_SUBSET_LINE_COUNT"
+
+if [[ "$DUP_SAMPLE1_SUBSET_LINE_COUNT" -eq "$ORIGINAL_LINE_COUNT" && "$DUP_SAMPLE2_SUBSET_LINE_COUNT" -eq "$ORIGINAL_LINE_COUNT" ]]; then
+  echo "✅ Test passed: Duplicate genes are deduplicated and subset bam files have the same number of lines as the original bam file."
+else
+  echo "❌ Test failed: Duplicate genes test produced unexpected output."
+  exit 1
+fi
+
+rm -rf $PWD/tests/subsetBamfiles/output_dup
+rm -rf $PWD/tests/subsetBamfiles/temp_dup
