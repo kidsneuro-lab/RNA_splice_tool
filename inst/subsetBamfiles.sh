@@ -91,8 +91,8 @@ if [[ $? -ne 0 ]]; then
 fi
 ### END MODIFICATION ###
 
-# Deduplicate genes while preserving order
-GENES=$(echo "$GENES" | tr ',' '\n' | awk '!seen[$0]++' | tr '\n' ',' | sed 's/,$//')
+# Deduplicate genes while preserving order (also strip any surrounding whitespace from each gene)
+GENES=$(echo "$GENES" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | awk 'NF && !seen[$0]++' | tr '\n' ',' | sed 's/,$//')
 echo "GENES (deduplicated): $GENES"
 
 # Obtain gene coordinates by executing get_genes_coords.R
