@@ -1,91 +1,48 @@
-# Cortar Documentation
+# Cortar technical documentation
 
-This folder contains comprehensive documentation for the `cortar()` function and its three analysis modes.
+These documents describe the behaviour of cortar version 1.0.0 at commit
+`9f693bd`. They are an implementation audit, not a description of an idealised
+splice-analysis method. Where comments, older documentation and executable code
+disagree, the executable code is treated as authoritative.
 
-## Documentation Files
+## Start here
 
-### 📖 [Cortar Overview](cortar-overview.md)
-Main documentation covering:
-- Function parameters and usage
-- Sample file format requirements
-- Overview of all three analysis modes
-- General workflow and output descriptions
-- Installation and basic examples
+- [Developer guide to the codebase](developer-codebase-guide.md): newcomer
+  orientation, repository map, call graph, every `R/` module, tests and safe
+  change workflow.
+- [Manuscript-ready methods brief](cortar-overview.md): scientific calculation
+  method, essential limitations and study-specific details to report.
+- [Event detection, annotation and quantification](event-detection-and-quantification.md):
+  exact counting rules and formulae.
+- [One-versus-many/default mode](default-mode.md): test, family and control
+  selection and comparison statistics.
+- [Panel mode](panel-mode.md): how panel mode differs from default mode.
+- [Research mode](research-mode.md): cohort aggregation and outputs.
+- [Assumptions, limitations and known defects](assumptions-and-limitations.md):
+  biological assumptions, statistical caveats and implementation hazards.
+- [Synthetic BAM validation plan](synthetic-bam-test-plan.md): recommended tools,
+  fixtures, expected results and test architecture.
 
-### 🔍 [Default Mode](default-mode.md)
-**Single gene analysis for individual patients/probands**
-- One gene per test sample
-- Family-aware control filtering
-- Gene-specific control exclusion
-- Individual patient reports
-- Clinical diagnostics focus
+## Confidence labels
 
-### 🧬 [Panel Mode](panel-mode.md) 
-**Multi-gene panel analysis for targeted gene sets**
-- Multiple genes analysed simultaneously
-- External genelist specification
-- Panel-wide reporting
-- Gene panel sequencing applications
-- Clinical exome analysis
+The documents use three labels:
 
-### 🧪 [Research Mode](research-mode.md)
-**Population-level analysis for research studies**
-- All samples treated equally
-- No test/control distinctions
-- Population statistics calculation
-- Cohort studies and population genetics
-- Reference database development
+- **Implemented**: directly established by executable source at the audited
+  commit.
+- **Inferred**: a consequence of library semantics or control flow, but not
+  asserted by a dedicated test.
+- **Unverified intent**: a name or comment suggests an intention that the code
+  does not reliably implement.
 
-## Quick Mode Selection Guide
+The existing mode documents previously contained unsupported features such as
+Ensembl identifier support, panel burden scores, pathway analysis, multiple
+testing and batch correction. Those features are not implemented and have been
+removed from this documentation.
 
-| Use Case | Recommended Mode | Key Features |
-|----------|------------------|--------------|
-| Single patient, one gene of interest | **Default** | Family filtering, gene-specific controls |
-| Gene panel testing | **Panel** | Multi-gene analysis, external genelist |
-| Population study | **Research** | No test/control, population statistics |
-| Clinical diagnostics | **Default** or **Panel** | Depending on single gene vs panel |
-| Method development | **Research** | Equal treatment of all samples |
-| Reference database | **Research** | Population-level statistics |
+## Current automated evidence
 
-## Core Workflow Snapshots
-
-### Default Mode
-
-```mermaid
-flowchart LR
-    A[Input: samplefile with test sample and target gene] --> B[Logic: one-gene test vs unrelated, non-matching-gene controls]
-    B --> C[Output: per-sample clinical-style splicing report]
-```
-
-### Panel Mode
-
-```mermaid
-flowchart LR
-    A[Input: samplefile plus panel genelist] --> B[Logic: per-test sample, analyse all panel genes vs unrelated controls]
-    B --> C[Output: per-sample multi-gene panel splicing report]
-```
-
-### Research Mode
-
-```mermaid
-flowchart LR
-    A[Input: cohort samplefile plus research genelist] --> B[Logic: all-sample population analysis with no test/control filtering]
-    B --> C[Output: cohort-wide summary statistics and splicing landscape]
-```
-
-## Getting Started
-
-1. **Start with [Cortar Overview](cortar-overview.md)** for general function usage
-2. **Choose your mode** based on your analysis goals:
-   - Single gene investigation → [Default Mode](default-mode.md)
-   - Gene panel analysis → [Panel Mode](panel-mode.md) 
-   - Population study → [Research Mode](research-mode.md)
-3. **Follow the workflow diagrams** in each mode's documentation
-4. **Review the examples** for code implementation
-
-## Support
-
-For additional help:
-- Check the troubleshooting sections in each mode's documentation
-- Review the examples and best practices
-- Refer to the main package README for installation instructions
+Running `Rscript -e 'devtools::test(stop_on_failure = FALSE)'` on 18 August 2026
+produced 113 passes, with no failures, warnings or skips. The suite includes one
+snapshot-style BAM end-to-end test for EMD. It does not yet contain orthogonal
+ground-truth BAMs for every event class, strand mode, flag filter, control rule or
+zero-coverage edge case. See the [validation plan](synthetic-bam-test-plan.md).
