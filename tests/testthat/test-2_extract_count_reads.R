@@ -49,3 +49,44 @@ test_that("read_sj_sample handles empty SJ and IR files", {
   expect_equal(length(sample_reads$sj), 0L)
   expect_equal(length(sample_reads$ir), 0L)
 })
+
+test_that("extractCountReads does not multiply counts when a gene is listed more than once", {
+  # In default mode genes come from file$genes, one entry per sample row, so the
+  # same gene appears once for every sample that lists it
+  bamfile <- system.file("extdata", "test_sample.bam", package = "cortar")
+
+  genes_tx <- selectGenesTranscripts("LEMD3", "hg38", "UCSC")
+
+  count_reads <- function(genes.GRanges) {
+    reads <- suppressMessages(extractCountReads(
+      genes.GRanges = genes.GRanges,
+      introns.GRanges = genes_tx$introns$granges,
+      intron_starts.GRanges = genes_tx$junctions$starts,
+      intron_ends.GRanges = genes_tx$junctions$ends,
+      bamfiles = bamfile,
+      sjfiles = "",
+      irfiles = "",
+      sample_names = "test_sample",
+      assembly = "hg38",
+      annotation = "UCSC",
+      paired = TRUE,
+      stranded = 2,
+      input = "bamfile",
+      debug = FALSE
+    ))
+    as.data.table(reads)
+  }
+
+  single <- count_reads(genes_tx$genes)
+  duplicated <- count_reads(c(genes_tx$genes, genes_tx$genes))
+
+  expect_gt(sum(single$count_test_sample), 0)
+  expect_equal(duplicated, single)
+})
+
+test_that("selectGenesTranscripts returns one range per gene listed more than once", {
+  single <- selectGenesTranscripts("LEMD3", "hg38", "UCSC")
+  duplicated <- selectGenesTranscripts(c("LEMD3", "LEMD3"), "hg38", "UCSC")
+
+  expect_equal(duplicated, single)
+})
