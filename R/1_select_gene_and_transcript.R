@@ -51,7 +51,9 @@ selectGenesTranscripts <- function(genes,
     refseq_introns_exons <- refseq_introns_exons_hg19
   }
 
-  gene_tx <- tx_extraction(genes, refseq_introns_exons, debug)
+  # The same gene/transcript can be requested more than once (e.g. one entry per
+  # sample in default mode)
+  gene_tx <- unique(tx_extraction(genes, refseq_introns_exons, debug))
   genes.GRanges <- gene_to_GRange(gene_tx, annotation, refseq_introns_exons, debug)
   introns.GRanges <- introns_to_GRange(gene_tx, annotation, refseq_introns_exons, debug)
   introns_other_tx.GRanges <- introns_other_tx_to_GRange(gene_tx, annotation, refseq_introns_exons, debug)

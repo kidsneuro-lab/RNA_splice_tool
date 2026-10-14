@@ -61,8 +61,10 @@ extractCountReads <- function(genes.GRanges,
   ir <- list()
 
   if(input == "bamfile"){
+  # Rsamtools returns a read once per `which` range it overlaps, so duplicated
+  # or overlapping gene ranges must be merged to avoid counting reads twice
   param <- Rsamtools::ScanBamParam(
-    which = genes.GRanges, flag = Rsamtools::scanBamFlag(
+    which = GenomicRanges::reduce(genes.GRanges, ignore.strand = TRUE), flag = Rsamtools::scanBamFlag(
       isDuplicate = FALSE,
       isSecondaryAlignment = FALSE
     )
